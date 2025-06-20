@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const LiarsDiceGame = require('./game/liarsDice');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,6 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = 3001;
+
+const games = {};
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
