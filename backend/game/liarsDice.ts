@@ -1,5 +1,6 @@
 type Player = {
-    id: string;
+    id: number;
+    name: string;
     dice: number[];
     hasLost: boolean;
 };
@@ -13,11 +14,16 @@ type GameState = {
 export class LiarsDiceGame {
     state: GameState;
 
-    constructor(playerIds: string[]) {
+    constructor(playerNames: string[]) {
         this.state = {
-            players: playerIds.map(id => ({id, dice: this.rollDice(6), hasLost: false})),
+            players: playerNames.map((name, index) => ({
+                id: index,
+                name,
+                dice: this.rollDice(6),
+                hasLost: false
+            })),
             currentPlayer: 0,
-            bid: null,
+            bid: null
         };
     }
 
@@ -41,22 +47,24 @@ export class LiarsDiceGame {
         return true;
     }
 
-    callLiar(playerId: string): { loserId: string } | null {
-        if (this.state.players[this.state.currentPlayer].id !== playerId) return null;
-
-        const total = this.state.players.flatMap(p => p.dice)
-        .filter(face => face === this.state.bid?.face).length;
+    callLiar(playerId: number): { loserId: number } | null {
+        if(this.state.currentPlayer !== playerId) return null;
+        
+        const total = this.state.players
+            .flatMap(p => p.dice)
+            .filter(face => face === this.state.bid?.face).length;
 
         const liarWasRight = total < (this.state.bid?.count ?? 0);
-        const loser = liarWasRight
-        ? this.state.players.find(p => p.id === this.getPreviousPlayerId())
-        : this.state.players.find(p => p.id === playerId);
+        const prevPlayerId = this.getPreviousPlayerId();
 
+        const loserId = liarWasRight ? prevPlayerId : playerId;
+        const loser = this.state.players.find(p => p.id === loserId);
         if (loser) loser.hasLost = true;
-        return { loserId: loser?.id || '' };
+
+        return { loserId };
     }
 
-    getPreviousPlayerId(): string {
+    getPreviousPlayerId(): number {
         const total = this.state.players.length;
         let index = this.state.currentPlayer;
         do {
@@ -65,16 +73,18 @@ export class LiarsDiceGame {
         return this.state.players[index].id;
     }
 
-    getPublicState(forPlayerId: string) {
+    getPublicState(forPlayerName: string) {
         return {
             players: this.state.players.map(p => ({
                 id: p.id,
+                name: p.name,
                 diceCount: p.dice.length,
-                isSelf: p.id === forPlayerId,
-        })),
-        currentPlayer: this.state.players[this.state.currentPlayer].id,
-        currentBid: this.state.bid,
-        };
+                isSelf: p.name === forPlayerName,
+                hasLost: p.hasLost,
+            })),
+            currentPlayer: this.state.currentPlayer,
+            currentBid: this.state.bid,
+        }
     }
 
 }
