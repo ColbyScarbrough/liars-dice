@@ -63,6 +63,7 @@ class LiarsDiceGame {
                 diceCount: p.dice.length,
                 isSelf: p.name === forPlayerName,
                 hasLost: p.hasLost,
+                dice: p.name === forPlayerName ? p.dice : undefined,
             })),
             currentPlayer: this.state.currentPlayer,
             currentBid: this.state.bid,
