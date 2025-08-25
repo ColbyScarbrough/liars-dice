@@ -29,110 +29,108 @@ function generateRoomCode() {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  // ===== Create a Room =====
-  socket.on('createRoom', ({ playerName }) => {
+  socket.on('createRoom', ({ playerName }, callback) => {
     let roomCode;
     do {
       roomCode = generateRoomCode();
     } while (games[roomCode]);
 
-    // Create game and track creator
     games[roomCode] = { game: new LiarsDiceGame([playerName]), creator: playerName };
     socket.join(roomCode);
 
     console.log(`Room created: ${roomCode} by ${playerName}`);
-
-    // Send the room code and initial state back to the creator
-    socket.emit('roomCreated', { roomCode, state: games[roomCode].game.getPublicState(playerName) });
+    callback({ roomCode, state: games[roomCode].game.getPublicState(playerName) });
   });
 
-  // ===== Join an Existing Room =====
-  socket.on('joinGame', ({ roomId, playerName }) => {
+  socket.on('joinGame', ({ roomId, playerName }, callback) => {
     const roomCode = roomId.toUpperCase();
     const gameData = games[roomCode];
 
     if (!gameData) {
-      socket.emit('errorMessage', 'Room not found');
+      callback({ error: 'Room not found' });
       return;
     }
 
     if (gameData.game.state.players.length >= 6) {
-      socket.emit('errorMessage', 'Room is full (max 6 players)');
+      callback({ error: 'Room is full (max 6 players)' });
       return;
     }
 
-    // Check if playerName already exists in the room
     const existingPlayer = gameData.game.state.players.find(p => p.name === playerName);
     if (existingPlayer) {
       console.log(`${playerName} is already in room ${roomCode}, skipping join`);
       socket.join(roomCode);
-      io.to(roomCode).emit('gameState', gameData.game.getPublicState(playerName));
+      callback({ state: gameData.game.getPublicState(playerName) });
       return;
     }
 
-    // Add new player
     socket.join(roomCode);
     const newId = gameData.game.state.players.length;
     gameData.game.state.players.push({
       id: newId,
       name: playerName,
       dice: gameData.game.rollDice(6),
-      hasLost: false
+      hasLost: false,
     });
 
     console.log(`${playerName} joined room ${roomCode}`);
     io.to(roomCode).emit('gameState', gameData.game.getPublicState(playerName));
+    callback({ state: gameData.game.getPublicState(playerName) });
   });
 
-  // ===== Start Game =====
-  socket.on('startGame', ({ roomId, playerName }) => {
+  socket.on('startGame', ({ roomId, playerName }, callback) => {
     const roomCode = roomId.toUpperCase();
     const gameData = games[roomCode];
 
     if (!gameData) {
-      socket.emit('errorMessage', 'Room not found');
+      callback({ error: 'Room not found' });
       return;
     }
 
     if (playerName !== gameData.creator) {
-      socket.emit('errorMessage', 'Only the room creator can start the game');
+      callback({ error: 'Only the room creator can start the game' });
       return;
     }
 
     if (gameData.game.state.players.length < 2) {
-      socket.emit('errorMessage', 'At least 2 players are required to start the game');
+      callback({ error: 'At least 2 players are required to start the game' });
       return;
     }
 
-    // Game can start, notify all players
     console.log(`Game started in room ${roomCode} by ${playerName}`);
     io.to(roomCode).emit('gameStarted', { state: gameData.game.getPublicState(playerName) });
+    callback({ state: gameData.game.getPublicState(playerName) });
   });
 
-  // ===== Make a Bid =====
-  socket.on('makeBid', ({ roomId, playerId, count, face }) => {
+  socket.on('makeBid', ({ roomId, playerId, count, face }, callback) => {
     const gameData = games[roomId.toUpperCase()];
-    if (!gameData) return;
+    if (!gameData) {
+      callback({ error: 'Room not found' });
+      return;
+    }
     if (gameData.game.makeBid(playerId, count, face)) {
       io.to(roomId.toUpperCase()).emit('gameState', gameData.game.getPublicState(''));
+      callback({ state: gameData.game.getPublicState('') });
     } else {
-      console.log(`Bid failed for player ${playerId} in room ${roomId}`);
+      callback({ error: 'Invalid bid' });
     }
   });
 
-  // ===== Call Liar =====
-  socket.on('callLiar', ({ roomId, playerId }) => {
+  socket.on('callLiar', ({ roomId, playerId }, callback) => {
     const gameData = games[roomId.toUpperCase()];
-    if (!gameData) return;
+    if (!gameData) {
+      callback({ error: 'Room not found' });
+      return;
+    }
     const result = gameData.game.callLiar(playerId);
     if (result) {
       io.to(roomId.toUpperCase()).emit('gameState', gameData.game.getPublicState(''));
+      callback({ state: gameData.game.getPublicState('') });
     } else {
-      console.log(`Challenge failed for player ${playerId} in room ${roomId}`);
+      callback({ error: 'Invalid challenge' });
     }
   });
 
-  // ===== Disconnect =====
   socket.on('disconnect', () => {
     console.log('A user disconnected:', socket.id);
   });

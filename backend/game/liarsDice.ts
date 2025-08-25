@@ -1,91 +1,94 @@
 type Player = {
-    id: number;
-    name: string;
-    dice: number[];
-    hasLost: boolean;
+  id: number;
+  name: string;
+  dice: number[];
+  hasLost: boolean;
 };
 
 type GameState = {
-    players: Player[];
-    currentPlayer: number;
-    bid: { count: number; face: number} | null;
-}
+  players: Player[];
+  currentPlayer: number;
+  bid: { count: number; face: number } | null;
+};
 
 export class LiarsDiceGame {
-    state: GameState;
+  state: GameState;
 
-    constructor(playerNames: string[]) {
-        this.state = {
-            players: playerNames.map((name, index) => ({
-                id: index,
-                name,
-                dice: this.rollDice(6),
-                hasLost: false
-            })),
-            currentPlayer: 0,
-            bid: null
-        };
-    }
+  constructor(playerNames: string[]) {
+    this.state = {
+      players: playerNames.map((name, index) => ({
+        id: index,
+        name,
+        dice: this.rollDice(6),
+        hasLost: false,
+      })),
+      currentPlayer: 0,
+      bid: null,
+    };
+  }
 
-    rollDice(count: number) {
-        return Array.from({ length: count}, () => Math.floor(Math.random() * 6) + 1);
-    }
+  rollDice(count: number) {
+    return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
+  }
 
-    nextPlayer() {
-        const total = this.state.players.length;
-        do {
-            this.state.currentPlayer = (this.state.currentPlayer + 1) % total;
-        } while (this.state.players[this.state.currentPlayer].hasLost);
-    }
+  nextPlayer() {
+    const total = this.state.players.length;
+    do {
+      this.state.currentPlayer = (this.state.currentPlayer + 1) % total;
+    } while (this.state.players[this.state.currentPlayer].hasLost);
+  }
 
-    makeBid(playerId: number, count: number, face: number): boolean {
-        if(this.state.currentPlayer != playerId) return false;
-        if(this.state.bid && (this.state.bid.count <= count && this.state.bid.face <= face)) return false;
+  makeBid(playerId: number, count: number, face: number): boolean {
+    if (this.state.currentPlayer !== playerId) return false;
 
-        this.state.bid = { count, face };
-        this.nextPlayer();
-        return true;
-    }
+    const currentProduct = this.state.bid ? this.state.bid.count * this.state.bid.face : 0;
+    const newProduct = count * face;
 
-    callLiar(playerId: number): { loserId: number } | null {
-        if(this.state.currentPlayer !== playerId) return null;
-        
-        const total = this.state.players
-            .flatMap(p => p.dice)
-            .filter(face => face === this.state.bid?.face).length;
+    if (this.state.bid && newProduct <= currentProduct) return false;
 
-        const liarWasRight = total < (this.state.bid?.count ?? 0);
-        const prevPlayerId = this.getPreviousPlayerId();
+    this.state.bid = { count, face };
+    this.nextPlayer();
+    return true;
+  }
 
-        const loserId = liarWasRight ? prevPlayerId : playerId;
-        const loser = this.state.players.find(p => p.id === loserId);
-        if (loser) loser.hasLost = true;
+  callLiar(playerId: number): { loserId: number } | null {
+    if (this.state.currentPlayer !== playerId) return null;
 
-        return { loserId };
-    }
+    const total = this.state.players
+      .flatMap(p => p.dice)
+      .filter(face => face === this.state.bid?.face).length;
 
-    getPreviousPlayerId(): number {
-        const total = this.state.players.length;
-        let index = this.state.currentPlayer;
-        do {
-            index = (index - 1 + total) % total;
-        } while (this.state.players[index].hasLost);
-        return this.state.players[index].id;
-    }
+    const liarWasRight = total < (this.state.bid?.count ?? 0);
+    const prevPlayerId = this.getPreviousPlayerId();
 
-    getPublicState(forPlayerName: string) {
+    const loserId = liarWasRight ? prevPlayerId : playerId;
+    const loser = this.state.players.find(p => p.id === loserId);
+    if (loser) loser.hasLost = true;
+
+    return { loserId };
+  }
+
+  getPreviousPlayerId(): number {
+    const total = this.state.players.length;
+    let index = this.state.currentPlayer;
+    do {
+      index = (index - 1 + total) % total;
+    } while (this.state.players[index].hasLost);
+    return this.state.players[index].id;
+  }
+
+  getPublicState(forPlayerName: string) {
     return {
-        players: this.state.players.map(p => ({
+      players: this.state.players.map(p => ({
         id: p.id,
         name: p.name,
         diceCount: p.dice.length,
         isSelf: p.name === forPlayerName,
         hasLost: p.hasLost,
         dice: p.name === forPlayerName ? p.dice : undefined,
-        })),
-        currentPlayer: this.state.currentPlayer,
-        currentBid: this.state.bid,
+      })),
+      currentPlayer: this.state.currentPlayer,
+      currentBid: this.state.bid,
     };
-    }
-
+  }
 }

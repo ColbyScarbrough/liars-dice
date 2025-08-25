@@ -8,10 +8,10 @@ class LiarsDiceGame {
                 id: index,
                 name,
                 dice: this.rollDice(6),
-                hasLost: false
+                hasLost: false,
             })),
             currentPlayer: 0,
-            bid: null
+            bid: null,
         };
     }
     rollDice(count) {
@@ -24,9 +24,11 @@ class LiarsDiceGame {
         } while (this.state.players[this.state.currentPlayer].hasLost);
     }
     makeBid(playerId, count, face) {
-        if (this.state.currentPlayer != playerId)
+        if (this.state.currentPlayer !== playerId)
             return false;
-        if (this.state.bid && (this.state.bid.count <= count && this.state.bid.face <= face))
+        const currentProduct = this.state.bid ? this.state.bid.count * this.state.bid.face : 0;
+        const newProduct = count * face;
+        if (this.state.bid && newProduct <= currentProduct)
             return false;
         this.state.bid = { count, face };
         this.nextPlayer();
