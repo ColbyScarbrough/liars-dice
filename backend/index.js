@@ -108,7 +108,6 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('A user disconnected:', socket.id);
-    // Optional: Remove player from game if needed (requires tracking socket to player mapping)
   });
 });
 

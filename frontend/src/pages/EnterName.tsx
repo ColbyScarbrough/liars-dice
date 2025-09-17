@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import { useParams, useNavigate } from "react-router-dom";
 import io from 'socket.io-client';
@@ -7,25 +7,39 @@ export default function EnterName() {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
+  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9 ]/g, "");
     setPlayerName(value);
   };
 
-  const handleSubmit = () => {
-    if (playerName.trim().length < 1) return;
-    const socket = io('http://localhost:3001');
-    socket.emit(roomId ? 'joinGame' : 'createRoom', { roomId: roomId || '', playerName });
-    socket.on('roomCreated', ({ roomCode }: { roomCode: string }) => {
+  useEffect(() => {
+    const newSocket = io('http://localhost:3001');
+    setSocket(newSocket);
+
+    newSocket.on('roomCreated', ({ roomCode }: { roomCode: string }) => {
+      console.log('Room created:', roomCode);
       navigate(`/game/${roomCode}/${playerName}`);
     });
-    socket.on('gameState', (state: any) => { // Replace 'any' with GameState if defined
+
+    newSocket.on('gameState', (state: any) => {
+      console.log('Game state received:', state);
       if (roomId) navigate(`/game/${roomId}/${playerName}`);
     });
-    socket.on('errorMessage', (message: string) => {
-      console.log(message); // Handle error (e.g., show alert)
+
+    newSocket.on('errorMessage', (message: string) => {
+      console.log('Error:', message);
     });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [roomId, playerName, navigate]);
+
+  const handleSubmit = () => {
+    if (playerName.trim().length < 1 || !socket) return;
+    socket.emit(roomId ? 'joinGame' : 'createRoom', { roomId: roomId || '', playerName });
   };
 
   return (
