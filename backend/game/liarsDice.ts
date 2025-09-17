@@ -9,6 +9,7 @@ type GameState = {
   players: Player[];
   currentPlayer: number;
   bid: { count: number; face: number } | null;
+  started: boolean;
 };
 
 export class LiarsDiceGame {
@@ -24,6 +25,7 @@ export class LiarsDiceGame {
       })),
       currentPlayer: 0,
       bid: null,
+      started: false,
     };
   }
 
@@ -77,18 +79,18 @@ export class LiarsDiceGame {
     return this.state.players[index].id;
   }
 
-    getPublicState(forPlayerName: string) {
-        return {
-            players: this.state.players.map(p => ({
-                id: p.id,
-                name: p.name,
-                diceCount: p.dice.length,
-                isSelf: p.name === forPlayerName,
-                hasLost: p.hasLost,
-            })),
-            currentPlayer: this.state.currentPlayer,
-            currentBid: this.state.bid,
-        }
-    }
+  getPublicState(forPlayerName: string) {
+      return {
+          players: this.state.players.map(p => ({
+              id: p.id,
+              name: p.name,
+              diceCount: p.dice.length,
+              isSelf: p.name === forPlayerName,
+              hasLost: p.hasLost,
+          })),
+          currentPlayer: this.state.currentPlayer,
+          currentBid: this.state.bid,
+      }
+  }
 
 }

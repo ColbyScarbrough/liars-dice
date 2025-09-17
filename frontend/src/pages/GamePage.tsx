@@ -15,6 +15,7 @@ interface GameState {
   players: Player[];
   currentPlayer: number;
   currentBid: { count: number; face: number } | null;
+  started: boolean;
 }
 
 const GamePage: React.FC = () => {
@@ -56,10 +57,6 @@ const GamePage: React.FC = () => {
       socket.disconnect();
     };
   }, [roomId, playerName]);
-
-  const handleCallLiarClick = () => {
-    console.log('Call Liar clicked');
-  };
 
   const handleStartGameClick = () => {
     console.log('Start Game clicked');
@@ -109,6 +106,9 @@ const GamePage: React.FC = () => {
               : 'None'}
           </p>
         </Col>
+      </Row>
+      <Row>
+        <p>Game Started: {gameState.started}</p>
       </Row>
     </Container>
   );

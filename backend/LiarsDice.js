@@ -12,6 +12,7 @@ class LiarsDiceGame {
             })),
             currentPlayer: 0,
             bid: null,
+            started: false,
         };
     }
     rollDice(count) {
