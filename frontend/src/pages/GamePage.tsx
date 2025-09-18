@@ -81,13 +81,14 @@ const GamePage: React.FC = () => {
       }
     });
 
-    newSocket.on('getDice', (response: { dice?: number[]; error?: string }) => {
-      console.log('Received dice:', response);
-      if (response.error) {
-        setError(response.error);
-      } else if (response.dice) {
-        setDice(response.dice);
-      }
+    newSocket.on('newTurn', () => {
+      newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
+        if (response.error) {
+          setError(response.error);
+        } else if (response.dice) {
+          setDice(response.dice);
+        }
+      });
     });
 
     newSocket.on('errorMessage', (message: string) => {
@@ -115,19 +116,6 @@ const GamePage: React.FC = () => {
     }
   };
 
-  const handleCallLiarClick = () => {
-    console.log('Call Liar clicked');
-    if (roomId && id !== 'Loading...' && socket) {
-      socket.emit('callLiar', { roomId, playerId: id }, (response: { state?: GameState; error?: string }) => {
-        if (response.error) {
-          setCallError(response.error);
-        } else {
-          setCallError(null);
-        }
-      });
-    }
-  };
-
   const handleMakeBidClick = () => {
     console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
     if (roomId && id !== 'Loading...' && socket) {
@@ -136,6 +124,19 @@ const GamePage: React.FC = () => {
           setBidError(response.error);
         } else {
           setBidError(null);
+        }
+      });
+    }
+  };
+
+  const handleCallLiarClick = () => {
+    console.log('Call Liar clicked');
+    if (roomId && id !== 'Loading...' && socket) {
+      socket.emit('callLiar', { roomId, playerId: id }, (response: { state?: GameState; error?: string }) => {
+        if (response.error) {
+          setCallError(response.error);
+        } else {
+          setCallError(null);
         }
       });
     }

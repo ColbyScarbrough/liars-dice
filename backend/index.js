@@ -119,15 +119,11 @@ io.on('connection', (socket) => {
     console.log(`Player ${result} lost the challenge`);
     if (result !== null) {
       io.to(roomCode).emit('gameState', game.getPublicState(''));
-      game.state.players.forEach(player => {
-        if (!player.hasLost) {
-          io.to(roomCode).emit('getDice', { dice: game.getPlayerDice(player.id) });
-        }
-      });
       callback({ state: game.getPublicState(''), loserId: result });
     } else {
       callback({ error: 'Invalid challenge' });
     }
+    io.to(roomCode).emit('newTurn');
   });
 
   // ===== Get Dice =====
