@@ -69,6 +69,7 @@ class LiarsDiceGame {
             })),
             currentPlayer: this.state.currentPlayer,
             currentBid: this.state.bid,
+            started: this.state.started,
         };
     }
 }

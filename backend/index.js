@@ -83,6 +83,18 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('gameState', game.getPublicState(playerName));
   });
 
+  // ===== Start a Game =====
+  socket.on('startGame', ({ roomId }) => {
+    const roomCode = roomId.toUpperCase();
+    const game = games[roomCode];    
+    game.state.started = true;
+
+    io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
+    console.log("Game " + roomCode + " has been started");
+
+
+  });
+
   // ===== Make a Bid =====
   socket.on('makeBid', ({ roomId, playerId, count, face }) => {
     const game = games[roomId.toUpperCase()];
