@@ -28,7 +28,7 @@ const GamePage: React.FC = () => {
   const [bidError, setBidError] = useState<string | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
-  const [dice, setDice] = useState<number[]>([]); // Initialize as empty array
+  const [dice, setDice] = useState<number[]>([]);
 
   const id = gameState?.players.find(p => p.isSelf || p.name === playerName)?.id ?? 'Loading...';
 
