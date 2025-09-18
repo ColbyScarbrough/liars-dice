@@ -27,8 +27,6 @@ function generateRoomCode() {
 
 // Handle socket connections
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
   socket.on('createRoom', ({ playerName }, callback) => {
     let roomCode;
     do {
@@ -59,11 +57,10 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Check if playerName already exists in the room
     const existingPlayer = game.state.players.find(p => p.name === playerName);
     if (existingPlayer) {
       console.log(`${playerName} is already in room ${roomCode}, skipping join`);
-      socket.join(roomCode); // Join to receive updates, but don't add again
+      socket.join(roomCode);
       io.to(roomCode).emit('gameState', game.getPublicState(playerName));
       return;
     }
@@ -73,7 +70,7 @@ io.on('connection', (socket) => {
     game.state.players.push({
       id: newId,
       name: playerName,
-      dice: game.rollDice(6),
+      dice: game.generateDice(6),
       hasLost: false
     });
 
@@ -91,35 +88,63 @@ io.on('connection', (socket) => {
 
     io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
     console.log("Game " + roomCode + " has been started");
-
-
   });
 
   // ===== Make a Bid =====
-  socket.on('makeBid', ({ roomId, playerId, count, face }) => {
-    const game = games[roomId.toUpperCase()];
-    if (!game) return;
+  socket.on('makeBid', ({ roomId, playerId, count, face }, callback) => {
+    const roomCode = roomId.toUpperCase();
+    const game = games[roomCode];
+    if (!game) {
+      callback({ error: 'Room not found' });
+      return;
+    }
     if (game.makeBid(playerId, count, face)) {
-      io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
+      io.to(roomCode).emit('gameState', game.getPublicState(''));
+      console.log("Player " + playerId + " placed bet " + count + " " + face + "'s");
+      callback({ state: game.getPublicState('') });
     } else {
       callback({ error: 'Invalid bid' });
     }
   });
 
   // ===== Call Liar =====
-  socket.on('callLiar', ({ roomId, playerId }) => {
-    const game = games[roomId.toUpperCase()];
-    if (!game) return;
+  socket.on('callLiar', ({ roomId, playerId }, callback) => {
+    const roomCode = roomId.toUpperCase();
+    const game = games[roomCode];
+    if (!game) {
+      callback({ error: 'Room not found' });
+      return;
+    }
     const result = game.callLiar(playerId);
-    if (result) {
-      io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
+    console.log(`Player ${result} lost the challenge`);
+    if (result !== null) {
+      io.to(roomCode).emit('gameState', game.getPublicState(''));
+      game.state.players.forEach(player => {
+        if (!player.hasLost) {
+          io.to(roomCode).emit('getDice', { dice: game.getPlayerDice(player.id) });
+        }
+      });
+      callback({ state: game.getPublicState(''), loserId: result });
     } else {
       callback({ error: 'Invalid challenge' });
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('A user disconnected:', socket.id);
+  // ===== Get Dice =====
+  socket.on('getDice', ({ roomId, playerId }, callback) => {
+    const roomCode = roomId.toUpperCase();
+    const game = games[roomCode];
+    if (!game) {
+      callback({ error: 'Room not found' });
+      return;
+    }
+    const player = game.state.players.find(p => p.id === playerId);
+    if (!player) {
+      callback({ error: 'Player not found' });
+      return;
+    }
+    const dice = game.getPlayerDice(playerId);
+    callback({ dice });
   });
 });
 

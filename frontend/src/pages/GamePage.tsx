@@ -9,7 +9,7 @@ interface Player {
   diceCount: number;
   isSelf: boolean;
   hasLost: boolean;
-  dice?: number[]; // Added for client's dice
+  dice?: number[];
 }
 
 interface GameState {
@@ -25,7 +25,11 @@ const GamePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [bidCount, setBidCount] = useState<number>(1);
   const [bidFace, setBidFace] = useState<number>(1);
+  const [bidError, setBidError] = useState<string | null>(null);
+  const [callError, setCallError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+  const [dice, setDice] = useState<number[]>([]); // Initialize as empty array
+
   const id = gameState?.players.find(p => p.isSelf || p.name === playerName)?.id ?? 'Loading...';
 
   useEffect(() => {
@@ -43,16 +47,47 @@ const GamePage: React.FC = () => {
       newSocket.emit('joinGame', { roomId: roomId.toUpperCase(), playerName });
     });
 
-    newSocket.on('gameState', (state: GameState) => {
-      console.log('Received game state:', state);
-      setGameState(state);
-      setError(null);
-    });
-
     newSocket.on('gameStarted', ({ state }: { state: GameState }) => {
       console.log('Game started:', state);
       setGameState(state);
       setError(null);
+      setBidError(null);
+      // Request dice when game starts
+      if (id !== 'Loading...') {
+        newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
+          if (response.error) {
+            setError(response.error);
+          } else if (response.dice) {
+            setDice(response.dice);
+          }
+        });
+      }
+    });
+
+    newSocket.on('gameState', (state: GameState) => {
+      console.log('Received game state:', state);
+      setGameState(state);
+      setError(null);
+      setBidError(null);
+      // Request dice when receiving initial game state
+      if (id !== 'Loading...' && !dice.length) {
+        newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
+          if (response.error) {
+            setError(response.error);
+          } else if (response.dice) {
+            setDice(response.dice);
+          }
+        });
+      }
+    });
+
+    newSocket.on('getDice', (response: { dice?: number[]; error?: string }) => {
+      console.log('Received dice:', response);
+      if (response.error) {
+        setError(response.error);
+      } else if (response.dice) {
+        setDice(response.dice);
+      }
     });
 
     newSocket.on('errorMessage', (message: string) => {
@@ -67,7 +102,7 @@ const GamePage: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [roomId, playerName]);
+  }, [roomId, playerName, id, dice.length]);
 
   const handleStartGameClick = () => {
     console.log('Start Game clicked');
@@ -85,7 +120,9 @@ const GamePage: React.FC = () => {
     if (roomId && id !== 'Loading...' && socket) {
       socket.emit('callLiar', { roomId, playerId: id }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
-          setError(response.error);
+          setCallError(response.error);
+        } else {
+          setCallError(null);
         }
       });
     }
@@ -96,7 +133,9 @@ const GamePage: React.FC = () => {
     if (roomId && id !== 'Loading...' && socket) {
       socket.emit('makeBid', { roomId, playerId: id, count: bidCount, face: bidFace }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
-          setError(response.error);
+          setBidError(response.error);
+        } else {
+          setBidError(null);
         }
       });
     }
@@ -109,7 +148,7 @@ const GamePage: React.FC = () => {
     <Container>
       <h1>Liars Dice</h1>
       <h3>Your ID: {id}</h3>
-      <p>Your Dice: {gameState.players.find(p => p.isSelf)?.dice?.join(', ') || 'Loading...'}</p>
+      <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
       {id === 0 && !gameState.started && (
         <Button
           variant="success"
@@ -177,6 +216,9 @@ const GamePage: React.FC = () => {
             >
               Make Bid
             </Button>
+            {bidError && (
+              <small className="text-danger d-block mt-2">{bidError}</small>
+            )}
             <Button
               variant="danger"
               onClick={handleCallLiarClick}
@@ -185,6 +227,9 @@ const GamePage: React.FC = () => {
             >
               Call Liar
             </Button>
+            {callError && (
+              <small className="text-danger d-block mt-2">{callError}</small>
+            )}
           </Col>
         </Row>
       )}

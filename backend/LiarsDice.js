@@ -7,7 +7,7 @@ class LiarsDiceGame {
             players: playerNames.map((name, index) => ({
                 id: index,
                 name,
-                dice: this.rollDice(6),
+                dice: this.generateDice(6),
                 hasLost: false,
             })),
             currentPlayer: 0,
@@ -15,8 +15,15 @@ class LiarsDiceGame {
             started: false,
         };
     }
-    rollDice(count) {
+    generateDice(count) {
         return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
+    }
+    rollDiceForAllPlayers() {
+        this.state.players.forEach(player => {
+            if (!player.hasLost) {
+                player.dice = this.generateDice(player.dice.length);
+            }
+        });
     }
     nextPlayer() {
         const total = this.state.players.length;
@@ -37,18 +44,30 @@ class LiarsDiceGame {
     }
     callLiar(playerId) {
         var _a, _b;
+        if (this.state.bid == null)
+            return null;
         if (this.state.currentPlayer !== playerId)
             return null;
         const total = this.state.players
             .flatMap(p => p.dice)
             .filter(face => { var _a; return face === ((_a = this.state.bid) === null || _a === void 0 ? void 0 : _a.face); }).length;
-        const liarWasRight = total < ((_b = (_a = this.state.bid) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
+        const challengerWasRight = total < ((_b = (_a = this.state.bid) === null || _a === void 0 ? void 0 : _a.count) !== null && _b !== void 0 ? _b : 0);
         const prevPlayerId = this.getPreviousPlayerId();
-        const loserId = liarWasRight ? prevPlayerId : playerId;
-        const loser = this.state.players.find(p => p.id === loserId);
-        if (loser)
+        const loserId = challengerWasRight ? prevPlayerId : playerId;
+        const loser = this.state.players[loserId];
+        if (!loser)
+            return null;
+        if (loser.dice.length === 1) {
             loser.hasLost = true;
-        return { loserId };
+            loser.dice = [];
+        }
+        else {
+            loser.dice.pop();
+        }
+        this.state.bid = null;
+        this.nextPlayer();
+        this.rollDiceForAllPlayers();
+        return loserId;
     }
     getPreviousPlayerId() {
         const total = this.state.players.length;
@@ -71,6 +90,9 @@ class LiarsDiceGame {
             currentBid: this.state.bid,
             started: this.state.started,
         };
+    }
+    getPlayerDice(player) {
+        return this.state.players[player].dice;
     }
 }
 exports.LiarsDiceGame = LiarsDiceGame;
