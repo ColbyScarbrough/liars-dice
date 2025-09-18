@@ -52,33 +52,11 @@ const GamePage: React.FC = () => {
       setGameState(state);
       setError(null);
       setBidError(null);
-      // Request dice when game starts
-      if (id !== 'Loading...') {
-        newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
-          if (response.error) {
-            setError(response.error);
-          } else if (response.dice) {
-            setDice(response.dice);
-          }
-        });
-      }
     });
 
     newSocket.on('gameState', (state: GameState) => {
       console.log('Received game state:', state);
       setGameState(state);
-      setError(null);
-      setBidError(null);
-      // Request dice when receiving initial game state
-      if (id !== 'Loading...' && !dice.length) {
-        newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
-          if (response.error) {
-            setError(response.error);
-          } else if (response.dice) {
-            setDice(response.dice);
-          }
-        });
-      }
     });
 
     newSocket.on('newTurn', () => {
@@ -194,6 +172,7 @@ const GamePage: React.FC = () => {
               <Form.Control
                 type="number"
                 min={1}
+                max={6}
                 value={bidCount}
                 onChange={(e) => setBidCount(Number(e.target.value))}
                 disabled={gameState.currentPlayer !== id}

@@ -87,6 +87,8 @@ io.on('connection', (socket) => {
     game.state.started = true;
 
     io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
+    io.to(roomCode).emit('newTurn');
+
     console.log("Game " + roomCode + " has been started");
   });
 
