@@ -2,14 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LiarsDiceGame = void 0;
 class LiarsDiceGame {
-    constructor(playerNames) {
+    constructor() {
         this.state = {
-            players: playerNames.map((name, index) => ({
-                id: index,
-                name,
-                dice: this.generateDice(6),
-                hasLost: false,
-            })),
+            players: [],
             currentPlayer: 0,
             bid: null,
             started: false,
@@ -55,8 +50,11 @@ class LiarsDiceGame {
         const prevPlayerId = this.getPreviousPlayerId();
         const loserId = challengerWasRight ? prevPlayerId : playerId;
         const loser = this.state.players[loserId];
-        if (!loser)
+        if (!loser) {
+            console.error(`Loser with ID ${loserId} not found`);
             return null;
+        }
+        console.log(`Challenge by ${playerId}, prevPlayer: ${prevPlayerId}, loser: ${loserId}, dice before: ${loser.dice.length}`);
         if (loser.dice.length === 1) {
             loser.hasLost = true;
             loser.dice = [];
@@ -67,23 +65,29 @@ class LiarsDiceGame {
         this.state.bid = null;
         this.nextPlayer();
         this.rollDiceForAllPlayers();
+        console.log(`After challenge, loser dice: ${loser.dice.length}, bid: ${JSON.stringify(this.state.bid)}`);
         return loserId;
     }
     getPreviousPlayerId() {
         const total = this.state.players.length;
         let index = this.state.currentPlayer;
+        let iterations = 0;
         do {
             index = (index - 1 + total) % total;
+            iterations++;
+            if (iterations >= total) {
+                console.error('No valid previous player found');
+                return this.state.currentPlayer;
+            }
         } while (this.state.players[index].hasLost);
         return this.state.players[index].id;
     }
-    getPublicState(forPlayerName) {
+    getPublicState() {
         return {
             players: this.state.players.map(p => ({
                 id: p.id,
                 name: p.name,
                 diceCount: p.dice.length,
-                isSelf: p.name === forPlayerName,
                 hasLost: p.hasLost,
             })),
             currentPlayer: this.state.currentPlayer,

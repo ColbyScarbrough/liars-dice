@@ -17,65 +17,75 @@ app.use(express.json());
 
 const PORT = 3001;
 
-// Store game instances in memory: { roomCode: LiarsDiceGame }
+// Store game instances in memory: { roomId: LiarsDiceGame }
 const games = {};
 
 // Store UUID's in memory
 const uuids = {};
 
 // Utility to generate 6-character alphanumeric uppercase code
-function generateRoomCode() {
+function generateroomId() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 // Utility to generate a code to represent players
-function generatePlayerHash(roomCode) {
+function generatePlayerHash(roomId) {
   let uuid;
   do {
     uuid = Math.random().toString(36).substring(2, 8).toUpperCase();
-  } while (uuids[roomCode] && Object.values(uuids[roomCode]).includes(uuid));
+  } while (uuids[roomId] && Object.values(uuids[roomId]).includes(uuid));
   return uuid;
 }
 
 // Handle socket connections
 io.on('connection', (socket) => {
-  socket.on('createRoom', ({ playerName }, callback) => {
-    let roomCode;
+
+  // ===== Create a New Room =====
+  socket.on('createRoom', () => {
+    let roomId;
     do {
-      roomCode = generateRoomCode();
-    } while (games[roomCode]);
-    uuids[roomCode] = {};
+      roomId = generateroomId();
+    } while (games[roomId]);
+    uuids[roomId] = {};
 
     // Create game and add first player
-    games[roomCode] = new LiarsDiceGame([playerName]);
-    socket.join(roomCode);
-
-    console.log(`Room created: ${roomCode} by ${playerName}`);
+    games[roomId] = new LiarsDiceGame();
+    console.log(games);
+    socket.join(roomId);
 
     // Generate hash to represent player
-    let uuid = generatePlayerHash(roomCode);
-    uuids[roomCode][0] = uuid;
+    let uuid = generatePlayerHash(roomId);
+    uuids[roomId][0] = uuid;
 
-
+    console.log(`Room created: ${roomId}, UUID: ${uuid}`);
     // Send the room code and initial state back to the creator
-    socket.emit('roomCreated', { roomCode, uuid, state: games[roomCode].getPublicState(playerName) });
+    socket.emit('roomCreated', { roomId, uuid });
   });
 
-  socket.on('joinGame', ({ roomId, playerName }, callback) => {
-    const roomCode = roomId.toUpperCase();
-    const game = games[roomCode];
+  // ===== Initializer for New Rooms =====
+  socket.on('initializeGame', ({ roomId }) => {
+    console.log(roomId);
+    const game = games[roomId];
+    socket.emit('gameState', game.getPublicState());
+  })
+
+  // ===== Join an Existing Room =====
+  socket.on('joinGame', ({ roomId, playerName = 'Anonymous' }) => {
+    const game = games[roomId];
 
     if (!game) {
+      console.log(`Room not found: ${roomId}`);
       socket.emit('errorMessage', 'Room not found');
       return;
     }
 
     if (game.state.players.length >= 6) {
+      console.log(`Room full: ${roomId}`);
       socket.emit('errorMessage', 'Room is full (max 6 players)');
       return;
     }
 
-    socket.join(roomCode);
+    socket.join(roomId);
     const newId = game.state.players.length;
     game.state.players.push({
       id: newId,
@@ -85,38 +95,40 @@ io.on('connection', (socket) => {
     });
 
     // Generate hash to represent player
-    let uuid = generatePlayerHash(roomCode);
-    uuids[roomCode][uuids[roomCode].length] = uuid;
-    socket.emit('joinedGame', { roomCode, uuid })
-
-    console.log(`${playerName} joined room ${roomCode}`);
+    let uuid = generatePlayerHash(roomId);
+    uuids[roomId][newId] = uuid;
+    console.log(`Player joined: ${playerName} in room ${roomId}, UUID: ${uuid}`);
+    socket.emit('joinedGame', { roomId, uuid });
 
     // Send updated state to everyone in room
-    io.to(roomCode).emit('gameState', game.getPublicState(playerName));
+    io.to(roomId).emit('gameState', game.getPublicState());
   });
+
+  // ===== Player Enters Name =====
+  socket.on('nameEntered', ({ roomId, playerName }) => {
+    console.log("testing name entering");
+  }) 
 
   // ===== Start a Game =====
   socket.on('startGame', ({ roomId }) => {
-    const roomCode = roomId.toUpperCase();
-    const game = games[roomCode];    
+    const game = games[roomId];    
     game.state.started = true;
 
     io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
-    io.to(roomCode).emit('newTurn');
+    io.to(roomId).emit('newTurn');
 
-    console.log("Game " + roomCode + " has been started");
+    console.log("Game " + roomId + " has been started");
   });
 
   // ===== Make a Bid =====
   socket.on('makeBid', ({ roomId, playerId, count, face }, callback) => {
-    const roomCode = roomId.toUpperCase();
-    const game = games[roomCode];
+    const game = games[roomId];
     if (!game) {
       callback({ error: 'Room not found' });
       return;
     }
     if (game.makeBid(playerId, count, face)) {
-      io.to(roomCode).emit('gameState', game.getPublicState(''));
+      io.to(roomId).emit('gameState', game.getPublicState(''));
       console.log("Player " + playerId + " placed bet " + count + " " + face + "'s");
       callback({ state: game.getPublicState('') });
     } else {
@@ -126,8 +138,7 @@ io.on('connection', (socket) => {
 
   // ===== Call Liar =====
   socket.on('callLiar', ({ roomId, playerId }, callback) => {
-    const roomCode = roomId.toUpperCase();
-    const game = games[roomCode];
+    const game = games[roomId];
     if (!game) {
       callback({ error: 'Room not found' });
       return;
@@ -135,18 +146,17 @@ io.on('connection', (socket) => {
     const result = game.callLiar(playerId);
     console.log(`Player ${result} lost the challenge`);
     if (result !== null) {
-      io.to(roomCode).emit('gameState', game.getPublicState(''));
+      io.to(roomId).emit('gameState', game.getPublicState(''));
       callback({ state: game.getPublicState(''), loserId: result });
     } else {
       callback({ error: 'Invalid challenge' });
     }
-    io.to(roomCode).emit('newTurn');
+    io.to(roomId).emit('newTurn');
   });
 
   // ===== Get Dice =====
   socket.on('getDice', ({ roomId, playerId }, callback) => {
-    const roomCode = roomId.toUpperCase();
-    const game = games[roomCode];
+    const game = games[roomId];
     if (!game) {
       callback({ error: 'Room not found' });
       return;

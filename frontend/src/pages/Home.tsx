@@ -1,24 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Button, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import io from 'socket.io-client';
 
 export default function Home() {
-  const [joinCode, setJoinCode] = useState("");
+  const [roomId, setJoinCode] = useState("");
   const navigate = useNavigate();
+  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
     setJoinCode(value.toUpperCase());
   };
 
-  const handleJoin = () => {
-    if (joinCode.length === 6) {
-      navigate(`/enter-name/${joinCode}`);
-    }
-  };
+  useEffect(() => {
+    const newSocket = io('http://localhost:3001');
+    setSocket(newSocket);
+
+    newSocket.on('roomCreated', ({ roomId, uuid }: { roomId: string, uuid: string }) => {
+      console.log('Room created:', roomId);
+      navigate(`/game/${roomId}/${uuid}`);
+    });
+
+    newSocket.on('joinedGame', ({ roomId, uuid }: { roomId: string, uuid: string }) => {
+      console.log('Joined room ' + roomId);
+      navigate(`/game/${roomId}/${uuid}`);
+    });
+
+    newSocket.on('errorMessage', (message: string) => {
+      console.log('Error:', message);
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [navigate]); // Remove roomId from dependencies
 
   const handleCreate = () => {
-    navigate("/enter-name");
+    if (!socket) return;
+    socket.emit('createRoom');
+  };
+
+  const handleJoin = () => {
+    if (!socket) return;
+    console.log('join game triggered')
+    socket.emit('joinGame', { roomId: roomId });
   };
 
   return (
@@ -32,7 +58,7 @@ export default function Home() {
             size="lg"
             type="text"
             placeholder="Game Code"
-            value={joinCode}
+            value={roomId}
             onChange={handleCodeChange}
             className="text-center fs-3 p-3"
             maxLength={6}
@@ -46,7 +72,7 @@ export default function Home() {
           <Button
             variant="primary"
             size="lg"
-            disabled={joinCode.length !== 6}
+            disabled={roomId.length !== 6}
             onClick={handleJoin}
           >
             Join Game

@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
+
 import GameControls from '../components/GameControls';
+import GameInfo from '../components/GameInfo';
+import EnterName from '../components/EnterName';
+
 
 interface Player {
   id: number;
@@ -22,56 +26,52 @@ interface GameState {
 
 const GamePage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const [playerName, setPlayerName] = useState<string>('');
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+
   const [bidCount, setBidCount] = useState<number>(1);
   const [bidFace, setBidFace] = useState<number>(1);
   const [bidError, setBidError] = useState<string | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
-  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
   const [dice, setDice] = useState<number[]>([]);
-  const [playerName, setPlayerName] = useState<string>('');
 
+
+  const nameEntered = false;
   const id = gameState?.players.find(p => p.isSelf)?.id ?? 'Loading...';
 
   useEffect(() => {
-    // Get playerName from localStorage or prompt
-    let name = localStorage.getItem('playerName');
-    if (!name) {
-      name = prompt('Enter your name:') || `Player${Math.floor(Math.random() * 1000)}`;
-      localStorage.setItem('playerName', name);
-    }
-    setPlayerName(name);
 
-    if (!roomId || !name) {
-      setError('Missing roomId or playerName');
+    if (!roomId) {
+      setError('Missing roomId');
       return;
     }
 
-    const newSocket = io('http://localhost:3001');
-    setSocket(newSocket);
-    console.log('GamePage socket created:', newSocket.id);
+    const socket = io('http://localhost:3001');
+    setSocket(socket);
 
-    newSocket.on('connect', () => {
-      console.log('Connected to server');
-      newSocket.emit('joinGame', { roomId: roomId.toUpperCase(), playerName: name });
-    });
+    socket.on('connect', () => {
+      console.log("Connected to Server");
+      console.log(roomId);
+      socket.emit('initializeGame', { roomId });
+    }) 
 
-    newSocket.on('gameStarted', ({ state }: { state: GameState }) => {
+    socket.on('gameStarted', ({ state }: { state: GameState }) => {
       console.log('Game started:', state);
       setGameState(state);
       setError(null);
       setBidError(null);
     });
 
-    newSocket.on('gameState', (state: GameState) => {
+    socket.on('gameState', (state: GameState) => {
       console.log('Received game state:', state);
       setGameState(state);
     });
 
-    newSocket.on('newTurn', () => {
+    socket.on('newTurn', () => {
       if (id !== 'Loading...') {
-        newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
+        socket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
           if (response.error) {
             setError(response.error);
           } else if (response.dice) {
@@ -81,19 +81,24 @@ const GamePage: React.FC = () => {
       }
     });
 
-    newSocket.on('errorMessage', (message: string) => {
+    socket.on('errorMessage', (message: string) => {
       console.log('Error:', message);
       setError(message);
     });
 
-    newSocket.on('disconnect', () => {
+    socket.on('disconnect', () => {
       console.log('Disconnected from server');
     });
 
     return () => {
-      newSocket.disconnect();
+      socket.disconnect();
     };
   }, [roomId, id]);
+
+  const handleSubmitName = () => {
+    console.log('Name Submitted');
+    socket?.emit('nameEntered', { roomId, playerName })
+  }
 
   const handleStartGameClick = () => {
     console.log('Start Game clicked');
@@ -111,46 +116,24 @@ const GamePage: React.FC = () => {
 
   return (
     <Container>
-      <h1>Liars Dice</h1>
-      <h3>Your ID: {id}</h3>
-      <p>Your Name: {playerName}</p>
-      <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
-      {id === 0 && !gameState.started && (
-        <Button
-          variant="success"
-          size="lg"
-          onClick={handleStartGameClick}
-          disabled={gameState.players.length < 2}
-        >
-          Start Game
-        </Button>
+      {!nameEntered && (
+        <EnterName
+          roomId={roomId}
+          playerName={playerName}
+          socket={socket}
+          handleSubmit={handleSubmitName}
+        />
       )}
-      <Row>
-        <Col>
-          <h3>Connected Players ({gameState.players.length}/6)</h3>
-          {gameState.players.map(player => (
-            <p key={player.id}>Name: {player.name}, ID: {player.id}, Dice: {player.diceCount}</p>
-          ))}
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <p>Current Player: {gameState.players.find(p => p.id === gameState.currentPlayer)?.name || 'Unknown'}</p>
-        </Col>
-        <Col>
-          <p>
-            Current Bid: {gameState.currentBid 
-              ? `${gameState.currentBid.count} x ${gameState.currentBid.face}` 
-              : 'None'}
-          </p>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <p>Game Status: {gameState.started ? 'Started' : 'Waiting to start'}</p>
-        </Col>
-      </Row>
-      {gameState.started && (
+      {nameEntered && (
+        <GameInfo
+          gameState={gameState}
+          id={id}
+          playerName={playerName}
+          dice={dice}
+          onStartGameClick={handleStartGameClick}
+        />
+      )}
+      {gameState.started && nameEntered && (
         <GameControls
           gameState={gameState}
           id={id}
