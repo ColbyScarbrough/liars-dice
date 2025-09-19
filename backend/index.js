@@ -64,11 +64,12 @@ io.on('connection', (socket) => {
   // ===== Initializer for New Rooms =====
   socket.on('initializeGame', ({ roomId }) => {
     const game = games[roomId];
-    socket.emit('gameState', game.getPublicState());
+    if(!game) console.log("A client failed to initialize gamestate during creation of room");
+    else socket.emit('gameState', game.getPublicState());
   })
 
   // ===== Join an Existing Room =====
-  socket.on('joinGame', ({ roomId, playerName = 'Anonymous' }) => {
+  socket.on('joinGame', ({ roomId }) => {
     const game = games[roomId];
 
     if (!game) {
@@ -84,18 +85,11 @@ io.on('connection', (socket) => {
     }
 
     socket.join(roomId);
-    const newId = game.state.players.length;
-    game.state.players.push({
-      id: newId,
-      name: playerName,
-      dice: game.generateDice(6),
-      hasLost: false
-    });
-
+  
     // Generate hash to represent player
     let uuid = generatePlayerHash(roomId);
-    uuids[roomId][newId] = uuid;
-    console.log(`Player joined: ${playerName} in room ${roomId}, UUID: ${uuid}`);
+    uuids[roomId][uuids[roomId].length] = uuid;
+    console.log(`Player joined in room ${roomId}, UUID: ${uuid}`);
     socket.emit('joinedGame', { roomId, uuid });
 
     // Send updated state to everyone in room

@@ -39,7 +39,7 @@ const EnterName: React.FC<EnterNameProps> = ({
 
   return (
     <Container className="text-center mt-5">
-      <h1 className="mb-4">{roomId ? 'Enter Your Name' : 'Create Game - Enter Your Name'}</h1>
+      <h1 className="mb-4">Enter Username</h1>
       <Row className="justify-content-center mb-4">
         <Col xs={12} md={10} lg={10}>
           <Form.Control
