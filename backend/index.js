@@ -50,7 +50,6 @@ io.on('connection', (socket) => {
 
     // Create game and add first player
     games[roomId] = new LiarsDiceGame();
-    console.log(games);
     socket.join(roomId);
 
     // Generate hash to represent player
@@ -64,7 +63,6 @@ io.on('connection', (socket) => {
 
   // ===== Initializer for New Rooms =====
   socket.on('initializeGame', ({ roomId }) => {
-    console.log(roomId);
     const game = games[roomId];
     socket.emit('gameState', game.getPublicState());
   })
@@ -106,7 +104,18 @@ io.on('connection', (socket) => {
 
   // ===== Player Enters Name =====
   socket.on('nameEntered', ({ roomId, playerName }) => {
-    console.log("testing name entering");
+    const game = games[roomId];
+
+    const newId = game.state.players.length;
+    game.state.players.push({
+      id: newId,
+      name: playerName,
+      dice: game.generateDice(6),
+      hasLost: false
+    });
+    console.log("Player " + playerName + " with ID " + newId + " has entered their name and was added to game " + roomId);
+    io.to(roomId).emit('gameState', game.getPublicState());
+    console.log(game)
   }) 
 
   // ===== Start a Game =====
@@ -114,7 +123,7 @@ io.on('connection', (socket) => {
     const game = games[roomId];    
     game.state.started = true;
 
-    io.to(roomId.toUpperCase()).emit('gameState', game.getPublicState(''));
+    io.to(roomId).emit('gameState', game.getPublicState());
     io.to(roomId).emit('newTurn');
 
     console.log("Game " + roomId + " has been started");
@@ -128,9 +137,9 @@ io.on('connection', (socket) => {
       return;
     }
     if (game.makeBid(playerId, count, face)) {
-      io.to(roomId).emit('gameState', game.getPublicState(''));
+      io.to(roomId).emit('gameState', game.getPublicState());
       console.log("Player " + playerId + " placed bet " + count + " " + face + "'s");
-      callback({ state: game.getPublicState('') });
+      callback({ state: game.getPublicState() });
     } else {
       callback({ error: 'Invalid bid' });
     }
@@ -146,8 +155,8 @@ io.on('connection', (socket) => {
     const result = game.callLiar(playerId);
     console.log(`Player ${result} lost the challenge`);
     if (result !== null) {
-      io.to(roomId).emit('gameState', game.getPublicState(''));
-      callback({ state: game.getPublicState(''), loserId: result });
+      io.to(roomId).emit('gameState', game.getPublicState());
+      callback({ state: game.getPublicState(), loserId: result });
     } else {
       callback({ error: 'Invalid challenge' });
     }

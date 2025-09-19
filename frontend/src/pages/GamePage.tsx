@@ -26,19 +26,17 @@ interface GameState {
 
 const GamePage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  const [playerName, setPlayerName] = useState<string>('');
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
-
+  const [playerName, setPlayerName] = useState<string>('');
+  const [nameEntered, setNameEntered] = useState<boolean>(false);
   const [bidCount, setBidCount] = useState<number>(1);
   const [bidFace, setBidFace] = useState<number>(1);
   const [bidError, setBidError] = useState<string | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
   const [dice, setDice] = useState<number[]>([]);
 
-
-  const nameEntered = false;
   const id = gameState?.players.find(p => p.isSelf)?.id ?? 'Loading...';
 
   useEffect(() => {
@@ -95,10 +93,16 @@ const GamePage: React.FC = () => {
     };
   }, [roomId, id]);
 
-  const handleSubmitName = () => {
-    console.log('Name Submitted');
-    socket?.emit('nameEntered', { roomId, playerName })
-  }
+  const handleSubmitName = (name: string) => {
+    if (!name.trim()) {
+      setError('Player name is required');
+      return;
+    }
+    console.log('Name Submitted:', name);
+    setPlayerName(name);
+    socket?.emit('nameEntered', { roomId, playerName: name });
+    setNameEntered(true);
+  };
 
   const handleStartGameClick = () => {
     console.log('Start Game clicked');
@@ -121,6 +125,7 @@ const GamePage: React.FC = () => {
           roomId={roomId}
           playerName={playerName}
           socket={socket}
+          setPlayerName={setPlayerName}
           handleSubmit={handleSubmitName}
         />
       )}
