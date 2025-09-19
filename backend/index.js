@@ -20,9 +20,21 @@ const PORT = 3001;
 // Store game instances in memory: { roomCode: LiarsDiceGame }
 const games = {};
 
+// Store UUID's in memory
+const uuids = {};
+
 // Utility to generate 6-character alphanumeric uppercase code
 function generateRoomCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Utility to generate a code to represent players
+function generatePlayerHash(roomCode) {
+  let uuid;
+  do {
+    uuid = Math.random().toString(36).substring(2, 8).toUpperCase();
+  } while (uuids[roomCode] && Object.values(uuids[roomCode]).includes(uuid));
+  return uuid;
 }
 
 // Handle socket connections
@@ -32,6 +44,7 @@ io.on('connection', (socket) => {
     do {
       roomCode = generateRoomCode();
     } while (games[roomCode]);
+    uuids[roomCode] = {};
 
     // Create game and add first player
     games[roomCode] = new LiarsDiceGame([playerName]);
@@ -39,8 +52,13 @@ io.on('connection', (socket) => {
 
     console.log(`Room created: ${roomCode} by ${playerName}`);
 
+    // Generate hash to represent player
+    let uuid = generatePlayerHash(roomCode);
+    uuids[roomCode][0] = uuid;
+
+
     // Send the room code and initial state back to the creator
-    socket.emit('roomCreated', { roomCode, state: games[roomCode].getPublicState(playerName) });
+    socket.emit('roomCreated', { roomCode, uuid, state: games[roomCode].getPublicState(playerName) });
   });
 
   socket.on('joinGame', ({ roomId, playerName }, callback) => {
@@ -57,14 +75,6 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const existingPlayer = game.state.players.find(p => p.name === playerName);
-    if (existingPlayer) {
-      console.log(`${playerName} is already in room ${roomCode}, skipping join`);
-      socket.join(roomCode);
-      io.to(roomCode).emit('gameState', game.getPublicState(playerName));
-      return;
-    }
-
     socket.join(roomCode);
     const newId = game.state.players.length;
     game.state.players.push({
@@ -73,6 +83,11 @@ io.on('connection', (socket) => {
       dice: game.generateDice(6),
       hasLost: false
     });
+
+    // Generate hash to represent player
+    let uuid = generatePlayerHash(roomCode);
+    uuids[roomCode][uuids[roomCode].length] = uuid;
+    socket.emit('joinedGame', { roomCode, uuid })
 
     console.log(`${playerName} joined room ${roomCode}`);
 

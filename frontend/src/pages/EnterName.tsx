@@ -18,15 +18,15 @@ export default function EnterName() {
     const newSocket = io('http://localhost:3001');
     setSocket(newSocket);
 
-    newSocket.on('roomCreated', ({ roomCode }: { roomCode: string }) => {
+    newSocket.on('roomCreated', ({ roomCode, uuid }: { roomCode: string, uuid : string }) => {
       console.log('Room created:', roomCode);
-      navigate(`/game/${roomCode}/${playerName}`);
+      navigate(`/game/${roomCode}/${uuid}`);
     });
 
-    newSocket.on('gameState', (state: any) => {
-      console.log('Game state received:', state);
-      if (roomId) navigate(`/game/${roomId}/${playerName}`);
-    });
+    newSocket.on('joinedGame', ({ roomCode, uuid }: { roomCode: String, uuid: string }) => {
+      console.log('Joined room ' + roomCode);
+      navigate(`/game/${roomCode}/${uuid}`);
+    })
 
     newSocket.on('errorMessage', (message: string) => {
       console.log('Error:', message);

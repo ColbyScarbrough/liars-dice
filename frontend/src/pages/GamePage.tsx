@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button, Form } from 'react-bootstrap';
+import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
+import GameControls from '../components/GameControls';
 
 interface Player {
   id: number;
@@ -20,7 +21,7 @@ interface GameState {
 }
 
 const GamePage: React.FC = () => {
-  const { roomId, playerName } = useParams<{ roomId: string; playerName: string }>();
+  const { roomId } = useParams<{ roomId: string }>();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bidCount, setBidCount] = useState<number>(1);
@@ -28,12 +29,21 @@ const GamePage: React.FC = () => {
   const [bidError, setBidError] = useState<string | null>(null);
   const [callError, setCallError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
-  const [dice, setDice] = useState<number[]>([]); // Initialize as empty array
+  const [dice, setDice] = useState<number[]>([]);
+  const [playerName, setPlayerName] = useState<string>('');
 
-  const id = gameState?.players.find(p => p.isSelf || p.name === playerName)?.id ?? 'Loading...';
+  const id = gameState?.players.find(p => p.isSelf)?.id ?? 'Loading...';
 
   useEffect(() => {
-    if (!roomId || !playerName) {
+    // Get playerName from localStorage or prompt
+    let name = localStorage.getItem('playerName');
+    if (!name) {
+      name = prompt('Enter your name:') || `Player${Math.floor(Math.random() * 1000)}`;
+      localStorage.setItem('playerName', name);
+    }
+    setPlayerName(name);
+
+    if (!roomId || !name) {
       setError('Missing roomId or playerName');
       return;
     }
@@ -44,7 +54,7 @@ const GamePage: React.FC = () => {
 
     newSocket.on('connect', () => {
       console.log('Connected to server');
-      newSocket.emit('joinGame', { roomId: roomId.toUpperCase(), playerName });
+      newSocket.emit('joinGame', { roomId: roomId.toUpperCase(), playerName: name });
     });
 
     newSocket.on('gameStarted', ({ state }: { state: GameState }) => {
@@ -60,13 +70,15 @@ const GamePage: React.FC = () => {
     });
 
     newSocket.on('newTurn', () => {
-      newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
-        if (response.error) {
-          setError(response.error);
-        } else if (response.dice) {
-          setDice(response.dice);
-        }
-      });
+      if (id !== 'Loading...') {
+        newSocket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
+          if (response.error) {
+            setError(response.error);
+          } else if (response.dice) {
+            setDice(response.dice);
+          }
+        });
+      }
     });
 
     newSocket.on('errorMessage', (message: string) => {
@@ -81,40 +93,14 @@ const GamePage: React.FC = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, [roomId, playerName, id, dice.length]);
+  }, [roomId, id]);
 
   const handleStartGameClick = () => {
     console.log('Start Game clicked');
     if (roomId && id === 0 && socket) {
-      socket.emit('startGame', { roomId, playerName }, (response: { state?: GameState; error?: string }) => {
+      socket.emit('startGame', { roomId }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
           setError(response.error);
-        }
-      });
-    }
-  };
-
-  const handleMakeBidClick = () => {
-    console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
-    if (roomId && id !== 'Loading...' && socket) {
-      socket.emit('makeBid', { roomId, playerId: id, count: bidCount, face: bidFace }, (response: { state?: GameState; error?: string }) => {
-        if (response.error) {
-          setBidError(response.error);
-        } else {
-          setBidError(null);
-        }
-      });
-    }
-  };
-
-  const handleCallLiarClick = () => {
-    console.log('Call Liar clicked');
-    if (roomId && id !== 'Loading...' && socket) {
-      socket.emit('callLiar', { roomId, playerId: id }, (response: { state?: GameState; error?: string }) => {
-        if (response.error) {
-          setCallError(response.error);
-        } else {
-          setCallError(null);
         }
       });
     }
@@ -127,6 +113,7 @@ const GamePage: React.FC = () => {
     <Container>
       <h1>Liars Dice</h1>
       <h3>Your ID: {id}</h3>
+      <p>Your Name: {playerName}</p>
       <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
       {id === 0 && !gameState.started && (
         <Button
@@ -164,54 +151,20 @@ const GamePage: React.FC = () => {
         </Col>
       </Row>
       {gameState.started && (
-        <Row>
-          <Col>
-            <h3>Game Actions</h3>
-            <Form.Group className="mb-3">
-              <Form.Label>Bid Count</Form.Label>
-              <Form.Control
-                type="number"
-                min={1}
-                max={6}
-                value={bidCount}
-                onChange={(e) => setBidCount(Number(e.target.value))}
-                disabled={gameState.currentPlayer !== id}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Bid Face (1-6)</Form.Label>
-              <Form.Control
-                type="number"
-                min={1}
-                max={6}
-                value={bidFace}
-                onChange={(e) => setBidFace(Number(e.target.value))}
-                disabled={gameState.currentPlayer !== id}
-              />
-            </Form.Group>
-            <Button
-              variant="primary"
-              onClick={handleMakeBidClick}
-              disabled={gameState.currentPlayer !== id}
-            >
-              Make Bid
-            </Button>
-            {bidError && (
-              <small className="text-danger d-block mt-2">{bidError}</small>
-            )}
-            <Button
-              variant="danger"
-              onClick={handleCallLiarClick}
-              className="ms-2"
-              disabled={gameState.currentPlayer !== id}
-            >
-              Call Liar
-            </Button>
-            {callError && (
-              <small className="text-danger d-block mt-2">{callError}</small>
-            )}
-          </Col>
-        </Row>
+        <GameControls
+          gameState={gameState}
+          id={id}
+          roomId={roomId}
+          socket={socket}
+          bidCount={bidCount}
+          bidFace={bidFace}
+          setBidCount={setBidCount}
+          setBidFace={setBidFace}
+          bidError={bidError}
+          setBidError={setBidError}
+          callError={callError}
+          setCallError={setCallError}
+        />
       )}
     </Container>
   );
