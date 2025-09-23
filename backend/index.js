@@ -37,6 +37,7 @@ function generatePlayerHash(roomId) {
   return uuid;
 }
 
+
 // Handle socket connections
 io.on('connection', (socket) => {
 
@@ -48,13 +49,13 @@ io.on('connection', (socket) => {
     } while (games[roomId]);
     uuids[roomId] = {};
 
-    // Create game and add first player
+    // Create game
     games[roomId] = new LiarsDiceGame();
     socket.join(roomId);
 
     // Generate hash to represent player
     let uuid = generatePlayerHash(roomId);
-    uuids[roomId][0] = uuid;
+    uuids[roomId][uuid] = {uuid};
 
     console.log(`Room created: ${roomId}, UUID: ${uuid}`);
     // Send the room code and initial state back to the creator
@@ -62,10 +63,17 @@ io.on('connection', (socket) => {
   });
 
   // ===== Initializer for New Rooms =====
-  socket.on('initializeGame', ({ roomId }) => {
+  socket.on('initializeGame', ({ roomId, uuid }, callback) => {
+    const socketId = socket.id;
     const game = games[roomId];
-    if(!game) console.log("A client failed to initialize gamestate during creation of room");
+    if (!game) {
+      callback({ error: 'Room not found' });
+      return;
+    }
     else socket.emit('gameState', game.getPublicState());
+    console.log(game);
+
+    uuids[roomId][uuid] = socketId;
   })
 
   // ===== Join an Existing Room =====
@@ -89,6 +97,7 @@ io.on('connection', (socket) => {
     // Generate hash to represent player
     let uuid = generatePlayerHash(roomId);
     uuids[roomId][uuids[roomId].length] = uuid;
+
     console.log(`Player joined in room ${roomId}, UUID: ${uuid}`);
     socket.emit('joinedGame', { roomId, uuid });
 
@@ -97,8 +106,13 @@ io.on('connection', (socket) => {
   });
 
   // ===== Player Enters Name =====
-  socket.on('nameEntered', ({ roomId, playerName }) => {
+  socket.on('nameEntered', ({ roomId, playerName }, callback) => {
     const game = games[roomId];
+
+    if (!game) {
+      callback({ error: 'Room not found' });
+      return;
+    }
 
     const newId = game.state.players.length;
     game.state.players.push({
@@ -109,12 +123,18 @@ io.on('connection', (socket) => {
     });
     console.log("Player " + playerName + " with ID " + newId + " has entered their name and was added to game " + roomId);
     io.to(roomId).emit('gameState', game.getPublicState());
-    console.log(game)
-  }) 
+    callback({ gameId: newId });
+  });
 
   // ===== Start a Game =====
   socket.on('startGame', ({ roomId }) => {
     const game = games[roomId];    
+
+    if (!game) {
+      callback({ error: 'Room not found' }); 
+      return;
+    }
+    
     game.state.started = true;
 
     io.to(roomId).emit('gameState', game.getPublicState());
@@ -172,6 +192,38 @@ io.on('connection', (socket) => {
     const dice = game.getPlayerDice(playerId);
     callback({ dice });
   });
+
+  // ===== Any Socket Disconnection =====
+  socket.on('disconnect', () => {
+    const removablesocketId = socket.id;
+    console.log(`Socket disconnected: ${removablesocketId}`);
+    const roomId = Object.keys(uuids).find(roomId =>
+      Object.values(uuids[roomId]).includes(removablesocketId)
+    );
+
+    if(!roomId) return;
+
+    for (const [uuid, socketId] of Object.entries(uuids[roomId])) {
+      if (socketId === removablesocketId) {
+        delete uuids[roomId][uuid];
+        break;
+      }
+    }
+
+    if (Object.values(uuids[roomId]).length === 0) {
+      delete uuids[roomId];
+      delete games[roomId];
+    }
+
+  });
+
+  // ===== Debug =====
+  socket.on('debug', ({ roomId }) => {
+    console.log(games);
+    console.log(uuids);
+    if(games[roomId]) console.log(games[roomId].state.players);
+  });
+
 });
 
 app.get('/', (req, res) => {

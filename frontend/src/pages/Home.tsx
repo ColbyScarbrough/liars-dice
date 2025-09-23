@@ -34,7 +34,7 @@ export default function Home() {
     return () => {
       newSocket.disconnect();
     };
-  }, [navigate]); // Remove roomId from dependencies
+  }, [navigate]);
 
   const handleCreate = () => {
     if (!socket) return;
@@ -46,6 +46,11 @@ export default function Home() {
     console.log('join game triggered')
     socket.emit('joinGame', { roomId: roomId });
   };
+
+  const handleDebug = () => {
+    if (!socket) return;
+    socket.emit('debug', { roomId: roomId });
+  }
 
   return (
     <Container className="text-center mt-5">
@@ -89,6 +94,13 @@ export default function Home() {
             onClick={handleCreate}
           >
             Create Room
+          </Button>
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleDebug}
+          >
+            Debug
           </Button>
         </Col>
       </Row>

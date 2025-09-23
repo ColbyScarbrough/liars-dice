@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Button, Container } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 
@@ -25,10 +25,11 @@ interface GameState {
 }
 
 const GamePage: React.FC = () => {
-  const { roomId } = useParams<{ roomId: string }>();
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const { roomId, uuid } = useParams<{ roomId: string, uuid: string }>();
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [id, setId] = useState<number>(6);
   const [playerName, setPlayerName] = useState<string>('');
   const [nameEntered, setNameEntered] = useState<boolean>(false);
   const [bidCount, setBidCount] = useState<number>(1);
@@ -37,7 +38,6 @@ const GamePage: React.FC = () => {
   const [callError, setCallError] = useState<string | null>(null);
   const [dice, setDice] = useState<number[]>([]);
 
-  const id = gameState?.players.find(p => p.isSelf)?.id ?? 'Loading...';
 
   useEffect(() => {
 
@@ -51,8 +51,11 @@ const GamePage: React.FC = () => {
 
     socket.on('connect', () => {
       console.log("Connected to Server");
-      console.log(roomId);
-      socket.emit('initializeGame', { roomId });
+      socket.emit('initializeGame', { roomId, uuid }, (response: { error?: string }) => {
+        if (response.error) {
+          setError(response.error);
+        }
+      });
     }) 
 
     socket.on('gameStarted', ({ state }: { state: GameState }) => {
@@ -68,15 +71,7 @@ const GamePage: React.FC = () => {
     });
 
     socket.on('newTurn', () => {
-      if (id !== 'Loading...') {
-        socket.emit('getDice', { roomId, playerId: id }, (response: { dice?: number[]; error?: string }) => {
-          if (response.error) {
-            setError(response.error);
-          } else if (response.dice) {
-            setDice(response.dice);
-          }
-        });
-      }
+      
     });
 
     socket.on('errorMessage', (message: string) => {
@@ -91,17 +86,28 @@ const GamePage: React.FC = () => {
     return () => {
       socket.disconnect();
     };
-  }, [roomId, id]);
+  }, [roomId, uuid]);
 
   const handleSubmitName = (name: string) => {
+    if (!socket) {
+      setError('No socket connection');
+      return;
+    }
     if (!name.trim()) {
       setError('Player name is required');
       return;
     }
     console.log('Name Submitted:', name);
     setPlayerName(name);
-    socket?.emit('nameEntered', { roomId, playerName: name });
-    setNameEntered(true);
+    socket.emit('nameEntered', { roomId, playerName: name }, (response: { error?: string; gameId?: number }) => {
+      console.log('nameEntered response:', response);
+      if (response.error) {
+        setError(response.error);
+      } else if (response.gameId !== undefined) {
+        setId(response.gameId);
+        setNameEntered(true);
+      }
+    });
   };
 
   const handleStartGameClick = () => {
@@ -113,13 +119,27 @@ const GamePage: React.FC = () => {
         }
       });
     }
+
   };
+  
+  const handleDebug = () => {
+    if (!socket) return;
+    socket.emit('initializeGame', { roomId, uuid });
+
+  }
 
   if (error) return <div>Error: {error}</div>;
   if (!gameState) return <div>Loading players...</div>;
 
   return (
     <Container>
+      <Button
+        variant="primary"
+        size="lg"
+        onClick={handleDebug}
+      >
+        Debug
+      </Button>
       {!nameEntered && (
         <EnterName
           roomId={roomId}

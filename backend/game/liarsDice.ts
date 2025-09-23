@@ -93,6 +93,22 @@ export class LiarsDiceGame {
     return loserId;
   }
 
+  addPlayer(name: string): void {
+    const id = this.state.players.length;
+    const newPlayer: Player = {
+      id,
+      name,
+      dice: this.state.started ? [] : this.generateDice(6),
+      hasLost: this.state.started,
+    }
+
+    this.state.players.push(newPlayer);
+  }
+
+  removePlayer(id: number): void {
+    this.state.players = this.state.players.filter(player => player.id !== id);
+  }
+
   getPreviousPlayerId(): number {
     const total = this.state.players.length;
     let index = this.state.currentPlayer;
