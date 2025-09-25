@@ -51,7 +51,7 @@ const GamePage: React.FC = () => {
 
     socket.on('connect', () => {
       console.log("Connected to Server");
-      socket.emit('initializeGame', { roomId, uuid }, (response: { error?: string }) => {
+      socket.emit('initializeGame', { roomId, uuid }, (response: { error?: string, id?: number }) => {
         if (response.error) {
           setError(response.error);
         }
@@ -115,7 +115,7 @@ const GamePage: React.FC = () => {
     }
     console.log('Name Submitted:', name);
     setPlayerName(name);
-    socket.emit('nameEntered', { roomId, playerName: name }, (response: { error?: string; gameId?: number }) => {
+    socket.emit('nameEntered', { roomId, uuid, playerName: name }, (response: { error?: string; gameId?: number }) => {
       console.log('nameEntered response:', response);
       if (response.error) {
         setError(response.error);

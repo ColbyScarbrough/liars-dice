@@ -68,8 +68,7 @@ io.on('connection', (socket) => {
     if (!game) {
       callback({ error: 'Room not found' });
       return;
-    }
-    else socket.emit('gameState', game.getPublicState());
+    } else socket.emit('gameState', game.getPublicState());
 
     uuids[roomId][uuid] = socketId;
   })
@@ -103,24 +102,38 @@ io.on('connection', (socket) => {
   });
 
   // ===== Player Enters Name =====
-  socket.on('nameEntered', ({ roomId, playerName }, callback) => {
+  socket.on('nameEntered', ({ roomId, uuid, playerName }, callback) => {
     const game = games[roomId];
 
     if (!game) {
       callback({ error: 'Room not found' });
       return;
     }
-    
-    const newId = game.state.players.length;
+    let id = null;
+
+    // Check if a player with same name is already in game
+    const existingPlayer = game.state.players.find(p => p.name === playerName);
+    if (existingPlayer) {
+      callback({ error: 'Name already taken' });
+      return;
+    }
+    id = game.state.players.length;
     game.state.players.push({
-      id: newId,
+      id: id,
       name: playerName,
       dice: game.generateDice(6),
       hasLost: false
     });
-    console.log("Player " + playerName + " with ID " + newId + " has entered their name and was added to game " + roomId);
+  
+    const socketId = uuids[roomId][uuid]
+
+    uuids[roomId][uuid] = {socketId, playerName};
+
+    console.log("Player " + playerName + " with ID " + id + " has entered their name and was added to game " + roomId);
+    
+
     io.to(roomId).emit('gameState', game.getPublicState());
-    callback({ gameId: newId });
+    callback({ gameId: id });
   });
 
   // ===== Start a Game =====
