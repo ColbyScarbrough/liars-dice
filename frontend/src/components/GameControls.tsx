@@ -20,7 +20,7 @@ interface GameState {
 
 interface GameControlsProps {
   gameState: GameState;
-  id: number | 'Loading...';
+  id: number | null;
   roomId: string | undefined;
   socket: Socket | null;
   bidCount: number;
@@ -49,7 +49,7 @@ const GameControls: React.FC<GameControlsProps> = ({
 }) => {
   const handleMakeBidClick = () => {
     console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
-    if (roomId && id !== 'Loading...' && socket) {
+    if (roomId && id  && socket) {
       socket.emit('makeBid', { roomId, playerId: id, count: bidCount, face: bidFace }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
           setBidError(response.error);
@@ -64,7 +64,7 @@ const GameControls: React.FC<GameControlsProps> = ({
 
   const handleCallLiarClick = () => {
     console.log('Call Liar clicked');
-    if (roomId && id !== 'Loading...' && socket) {
+    if (roomId && id && socket) {
       socket.emit('callLiar', { roomId, playerId: id }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
           setCallError(response.error);

@@ -176,6 +176,7 @@ io.on('connection', (socket) => {
 
   // ===== Get Dice =====
   socket.on('getDice', ({ roomId, playerId }, callback) => {
+    console.log(playerId);
     const game = games[roomId];
     if (!game) {
       callback({ error: 'Room not found' });
@@ -198,7 +199,7 @@ io.on('connection', (socket) => {
       Object.values(uuids[roomId]).includes(removablesocketId)
     );
 
-    if(!roomId) return;
+    if (!roomId) return;
 
     for (const [uuid, socketId] of Object.entries(uuids[roomId])) {
       if (socketId === removablesocketId) {

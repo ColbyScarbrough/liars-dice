@@ -19,7 +19,7 @@ interface GameState {
 
 interface GameInfoProps {
   gameState: GameState;
-  id: number | 'Loading...';
+  id: number | null;
   playerName: string;
   dice: number[];
   setDice: React.Dispatch<React.SetStateAction<number[]>>;

@@ -29,7 +29,7 @@ const GamePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [id, setId] = useState<number>(6);
+  const [id, setId] = useState<number | null>(null);
   const [playerName, setPlayerName] = useState<string>('');
   const [nameEntered, setNameEntered] = useState<boolean>(false);
   const [bidCount, setBidCount] = useState<number>(1);
@@ -70,14 +70,6 @@ const GamePage: React.FC = () => {
       setGameState(state);
     });
 
-    socket.on('newTurn', () => {
-      socket.emit('getDice', { roomId, id }, (response: { error?: string }) => {
-        if (response.error) {
-          setError(response.error);
-        }
-      });
-    });
-
     socket.on('errorMessage', (message: string) => {
       console.log('Error:', message);
       setError(message);
@@ -91,6 +83,26 @@ const GamePage: React.FC = () => {
       socket.disconnect();
     };
   }, [roomId, uuid]);
+
+  useEffect(() => {
+    if (!socket || id === null) return;
+
+    const handleNewTurn = () => {
+      console.log(`New turn, fetching dice for player ID: ${id}`);
+      socket.emit('getDice', { roomId, playerId: id }, (response: { error?: string; dice?: number[] }) => {
+        if (response.error) {
+          console.log(`getDice error: ${response.error}`);
+          setError(response.error);
+        } else if (response.dice !== undefined) {
+          console.log(`Received dice for player ${id}: ${response.dice}`);
+          setDice(response.dice);
+        }
+      });
+    };
+
+    socket.on('newTurn', handleNewTurn);
+
+  }, [socket, id, roomId]);
 
   const handleSubmitName = (name: string) => {
     if (!socket) {
@@ -128,8 +140,12 @@ const GamePage: React.FC = () => {
   
   const handleDebug = () => {
     if (!socket) return;
-    socket.emit('initializeGame', { roomId, uuid });
-
+    console.log(id);
+    socket.emit('getDice', { roomId, playerId: id }, (response: { error?: string, dice?: number[] }) => {
+      if (response.error) {
+        setError(response.error);
+      } else if (response.dice !== undefined) setDice(response.dice);
+    });
   }
 
   if (error) return <div>Error: {error}</div>;
