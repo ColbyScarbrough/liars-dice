@@ -71,7 +71,6 @@ io.on('connection', (socket) => {
       return;
     }
     else socket.emit('gameState', game.getPublicState());
-    console.log(game);
 
     uuids[roomId][uuid] = socketId;
   })
@@ -122,7 +121,6 @@ io.on('connection', (socket) => {
       hasLost: false
     });
     console.log("Player " + playerName + " with ID " + newId + " has entered their name and was added to game " + roomId);
-    io.to(roomId).emit('gameState', game.getPublicState());
     callback({ gameId: newId });
   });
 
