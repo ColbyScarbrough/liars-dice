@@ -54,7 +54,6 @@ io.on('connection', (socket) => {
 
     // Generate hash to represent player
     let uuid = generatePlayerHash(roomId);
-    uuids[roomId][uuid] = {uuid};
 
     console.log(`Room created: ${roomId}, UUID: ${uuid}`);
     // Send the room code and initial state back to the creator
@@ -95,7 +94,6 @@ io.on('connection', (socket) => {
   
     // Generate hash to represent player
     let uuid = generatePlayerHash(roomId);
-    uuids[roomId][uuids[roomId].length] = uuid;
 
     console.log(`Player joined in room ${roomId}, UUID: ${uuid}`);
     socket.emit('joinedGame', { roomId, uuid });

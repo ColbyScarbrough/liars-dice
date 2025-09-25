@@ -22,6 +22,7 @@ interface GameInfoProps {
   id: number | 'Loading...';
   playerName: string;
   dice: number[];
+  setDice: React.Dispatch<React.SetStateAction<number[]>>;
   onStartGameClick: () => void;
 }
 

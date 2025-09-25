@@ -71,7 +71,11 @@ const GamePage: React.FC = () => {
     });
 
     socket.on('newTurn', () => {
-      
+      socket.emit('getDice', { roomId, id }, (response: { error?: string }) => {
+        if (response.error) {
+          setError(response.error);
+        }
+      });
     });
 
     socket.on('errorMessage', (message: string) => {
@@ -155,6 +159,7 @@ const GamePage: React.FC = () => {
           id={id}
           playerName={playerName}
           dice={dice}
+          setDice={setDice}
           onStartGameClick={handleStartGameClick}
         />
       )}
