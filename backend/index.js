@@ -51,7 +51,6 @@ io.on('connection', (socket) => {
 
     // Create game
     games[roomId] = new LiarsDiceGame();
-    socket.join(roomId);
 
     // Generate hash to represent player
     let uuid = generatePlayerHash(roomId);
@@ -64,6 +63,7 @@ io.on('connection', (socket) => {
 
   // ===== Initializer for New Rooms =====
   socket.on('initializeGame', ({ roomId, uuid }, callback) => {
+    socket.join(roomId);
     const socketId = socket.id;
     const game = games[roomId];
     if (!game) {
@@ -112,7 +112,7 @@ io.on('connection', (socket) => {
       callback({ error: 'Room not found' });
       return;
     }
-
+    
     const newId = game.state.players.length;
     game.state.players.push({
       id: newId,
@@ -121,6 +121,7 @@ io.on('connection', (socket) => {
       hasLost: false
     });
     console.log("Player " + playerName + " with ID " + newId + " has entered their name and was added to game " + roomId);
+    io.to(roomId).emit('gameState', game.getPublicState());
     callback({ gameId: newId });
   });
 

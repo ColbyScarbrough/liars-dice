@@ -108,8 +108,6 @@ const GamePage: React.FC = () => {
         setNameEntered(true);
       }
     });
-    socket.emit('initializeGame', { roomId, uuid });
-
   };
 
   const handleStartGameClick = () => {
