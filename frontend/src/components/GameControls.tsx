@@ -49,7 +49,6 @@ const GameControls: React.FC<GameControlsProps> = ({
 }) => {
   const handleMakeBidClick = () => {
     console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
-    console.log('Make Bid clicked:', { id, roomId, socket });
 
     if (roomId && id !== null && socket) {
       socket.emit('makeBid', { roomId, playerId: id, count: bidCount, face: bidFace }, (response: { state?: GameState; error?: string }) => {

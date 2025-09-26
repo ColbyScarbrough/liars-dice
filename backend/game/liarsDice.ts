@@ -109,6 +109,25 @@ export class LiarsDiceGame {
     this.state.players = this.state.players.filter(player => player.id !== id);
   }
 
+  gameOver(): boolean | string {
+    const playersLeft = this.state.players.filter(player => !player.hasLost);
+    if (playersLeft.length === 1) {
+      this.restartGame();
+      return playersLeft[0].name;
+    }
+    return false;
+  }
+
+  restartGame(): void {
+    this.state.players.forEach(player => {
+      player.dice = this.generateDice(6);
+      player.hasLost = false;
+    })
+    this.state.bid = null;
+    this.state.currentPlayer = 0;
+    this.state.started = false;
+  }
+
   getPreviousPlayerId(): number {
     const total = this.state.players.length;
     let index = this.state.currentPlayer;
