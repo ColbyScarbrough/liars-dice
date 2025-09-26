@@ -29,6 +29,7 @@ const GamePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [winner, setWinner] = useState<string | null>(null);
   const [id, setId] = useState<number | null>(null);
   const [playerName, setPlayerName] = useState<string>('');
   const [nameEntered, setNameEntered] = useState<boolean>(false);
@@ -60,9 +61,14 @@ const GamePage: React.FC = () => {
     socket.on('gameStarted', ({ state }: { state: GameState }) => {
       console.log('Game started:', state);
       setGameState(state);
+      setWinner(null);
       setError(null);
       setBidError(null);
     });
+
+    socket.on('gameOver', (winner: string) => {
+      setWinner(winner);
+    })
 
     socket.on('gameState', (state: GameState) => {
       console.log('Received game state:', state);
@@ -193,6 +199,9 @@ const GamePage: React.FC = () => {
           callError={callError}
           setCallError={setCallError}
         />
+      )}
+      {winner && !gameState.started && (
+        <p>{winner}</p>
       )}
     </Container>
   );

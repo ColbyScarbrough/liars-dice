@@ -70,7 +70,7 @@ io.on('connection', (socket) => {
       return;
     } else socket.emit('gameState', game.getPublicState());
 
-    
+
 
     uuids[roomId][uuid] = socketId;
   })
@@ -146,7 +146,7 @@ io.on('connection', (socket) => {
       callback({ error: 'Room not found' }); 
       return;
     }
-    
+    game.restartGame();
     game.state.started = true;
 
     io.to(roomId).emit('gameState', game.getPublicState());
@@ -186,12 +186,17 @@ io.on('connection', (socket) => {
     } else {
       callback({ error: 'Invalid challenge' });
     }
-    io.to(roomId).emit('newTurn');
+    const winner = game.gameOver();
+    console.log(winner);
+    if (winner) {
+      game.restartGame();
+      io.to(roomId).emit('gameOver', winner);
+    }
+    else io.to(roomId).emit('newTurn');
   });
 
   // ===== Get Dice =====
   socket.on('getDice', ({ roomId, playerId }, callback) => {
-    console.log(playerId);
     const game = games[roomId];
     if (!game) {
       callback({ error: 'Room not found' });
@@ -211,30 +216,25 @@ io.on('connection', (socket) => {
     const removablesocketId = socket.id;
     console.log(`Socket disconnected: ${removablesocketId}`);
     const roomId = Object.keys(uuids).find(roomId =>
-      Object.values(uuids[roomId]).some(data => data.socketId === removablesocketId)
+      Object.values(uuids[roomId]).includes(removablesocketId)
     );
 
     if (!roomId) return;
 
-    for (const [uuid, data] of Object.entries(uuids[roomId])) {
-      if (data.socketId === removablesocketId) {
-        const game = games[roomId];
-        if (game) {
-          game.state.players = game.state.players.filter(p => p.name !== data.playerName);
-        }
+    for (const [uuid, socketId] of Object.entries(uuids[roomId])) {
+      if (socketId === removablesocketId) {
+        //delete the player from the game
+        delete games[roomId].state.players
         delete uuids[roomId][uuid];
         break;
       }
     }
 
-    if (Object.keys(uuids[roomId]).length === 0) {
+    if (Object.values(uuids[roomId]).length === 0) {
       delete uuids[roomId];
       delete games[roomId];
     }
 
-    if (games[roomId]) {
-      io.to(roomId).emit('gameState', games[roomId].getPublicState());
-    }
   });
 
   // ===== Debug =====

@@ -68,6 +68,36 @@ class LiarsDiceGame {
         console.log(`After challenge, loser dice: ${loser.dice.length}, bid: ${JSON.stringify(this.state.bid)}`);
         return loserId;
     }
+    addPlayer(name) {
+        const id = this.state.players.length;
+        const newPlayer = {
+            id,
+            name,
+            dice: this.state.started ? [] : this.generateDice(6),
+            hasLost: this.state.started,
+        };
+        this.state.players.push(newPlayer);
+    }
+    removePlayer(id) {
+        this.state.players = this.state.players.filter(player => player.id !== id);
+    }
+    gameOver() {
+        const playersLeft = this.state.players.filter(player => !player.hasLost);
+        if (playersLeft.length === 1) {
+            this.restartGame();
+            return playersLeft[0].name;
+        }
+        return false;
+    }
+    restartGame() {
+        this.state.players.forEach(player => {
+            player.dice = this.generateDice(6);
+            player.hasLost = false;
+        });
+        this.state.bid = null;
+        this.state.currentPlayer = 0;
+        this.state.started = false;
+    }
     getPreviousPlayerId() {
         const total = this.state.players.length;
         let index = this.state.currentPlayer;
