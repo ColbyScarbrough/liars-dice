@@ -38,7 +38,6 @@ const GamePage: React.FC = () => {
   const [callError, setCallError] = useState<string | null>(null);
   const [dice, setDice] = useState<number[]>([]);
 
-
   useEffect(() => {
 
     if (!roomId) {

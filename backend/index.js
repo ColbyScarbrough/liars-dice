@@ -70,6 +70,8 @@ io.on('connection', (socket) => {
       return;
     } else socket.emit('gameState', game.getPublicState());
 
+    
+
     uuids[roomId][uuid] = socketId;
   })
 
@@ -209,23 +211,30 @@ io.on('connection', (socket) => {
     const removablesocketId = socket.id;
     console.log(`Socket disconnected: ${removablesocketId}`);
     const roomId = Object.keys(uuids).find(roomId =>
-      Object.values(uuids[roomId]).includes(removablesocketId)
+      Object.values(uuids[roomId]).some(data => data.socketId === removablesocketId)
     );
 
     if (!roomId) return;
 
-    for (const [uuid, socketId] of Object.entries(uuids[roomId])) {
-      if (socketId === removablesocketId) {
+    for (const [uuid, data] of Object.entries(uuids[roomId])) {
+      if (data.socketId === removablesocketId) {
+        const game = games[roomId];
+        if (game) {
+          game.state.players = game.state.players.filter(p => p.name !== data.playerName);
+        }
         delete uuids[roomId][uuid];
         break;
       }
     }
 
-    if (Object.values(uuids[roomId]).length === 0) {
+    if (Object.keys(uuids[roomId]).length === 0) {
       delete uuids[roomId];
       delete games[roomId];
     }
 
+    if (games[roomId]) {
+      io.to(roomId).emit('gameState', games[roomId].getPublicState());
+    }
   });
 
   // ===== Debug =====

@@ -49,7 +49,9 @@ const GameControls: React.FC<GameControlsProps> = ({
 }) => {
   const handleMakeBidClick = () => {
     console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
-    if (roomId && id  && socket) {
+    console.log('Make Bid clicked:', { id, roomId, socket });
+
+    if (roomId && id !== null && socket) {
       socket.emit('makeBid', { roomId, playerId: id, count: bidCount, face: bidFace }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
           setBidError(response.error);
@@ -64,7 +66,7 @@ const GameControls: React.FC<GameControlsProps> = ({
 
   const handleCallLiarClick = () => {
     console.log('Call Liar clicked');
-    if (roomId && id && socket) {
+    if (roomId && id !== null && socket) {
       socket.emit('callLiar', { roomId, playerId: id }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
           setCallError(response.error);
