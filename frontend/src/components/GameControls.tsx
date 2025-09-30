@@ -104,26 +104,27 @@ const GameControls: React.FC<GameControlsProps> = ({
             disabled={gameState.currentPlayer !== id}
           />
         </Form.Group>
-        <Button
-          variant="primary"
-          onClick={handleMakeBidClick}
-          disabled={gameState.currentPlayer !== id || !roomId || !socket}
-        >
-          Make Bid
-        </Button>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
+          <Button
+            variant="primary"
+            onClick={handleMakeBidClick}
+            disabled={gameState.currentPlayer !== id || !roomId || !socket}
+          >
+            Make Bid
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleCallLiarClick}
+            disabled={gameState.currentPlayer !== id || !roomId || !socket}
+          >
+            Call Liar
+          </Button>
+        </div>
         {bidError && (
-          <small className="text-danger d-block mt-2">{bidError}</small>
+          <small className="text-danger" style={{ display: 'block', marginTop: '8px', textAlign: 'center' }}>{bidError}</small>
         )}
-        <Button
-          variant="danger"
-          onClick={handleCallLiarClick}
-          className="ms-2"
-          disabled={gameState.currentPlayer !== id || !roomId || !socket}
-        >
-          Call Liar
-        </Button>
         {callError && (
-          <small className="text-danger d-block mt-2">{callError}</small>
+          <small className="text-danger" style={{ display: 'block', marginTop: '8px', textAlign: 'center' }}>{callError}</small>
         )}
       </Col>
     </Row>

@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Container } from 'react-bootstrap';
+import { Container, Button } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 
 import GameControls from '../components/GameControls';
 import GameInfo from '../components/GameInfo';
 import EnterName from '../components/EnterName';
+import ConnectedPlayers from '../components/ConnectedPlayers';
+import CurrentPlayerAndBid from '../components/CurrentPlayerAndBid';
+
+// Import dice images
+import dies from '../assets/dice-shield.png';
+import die1 from '../assets/dice-six-faces-one.png';
+import die2 from '../assets/dice-six-faces-two.png';
+import die3 from '../assets/dice-six-faces-three.png';
+import die4 from '../assets/dice-six-faces-four.png';
+import die5 from '../assets/dice-six-faces-five.png';
+import die6 from '../assets/dice-six-faces-six.png';
 
 
 interface Player {
@@ -39,8 +50,10 @@ const GamePage: React.FC = () => {
   const [callError, setCallError] = useState<string | null>(null);
   const [dice, setDice] = useState<number[]>([]);
 
-  useEffect(() => {
+  // Array of dice images for easy mapping
+  const diceImages = [die1, die2, die3, die4, die5, die6];
 
+  useEffect(() => {
     if (!roomId) {
       setError('Missing roomId');
       return;
@@ -107,6 +120,9 @@ const GamePage: React.FC = () => {
 
     socket.on('newTurn', handleNewTurn);
 
+    return () => {
+      socket.off('newTurn', handleNewTurn);
+    };
   }, [socket, id, roomId]);
 
   const handleSubmitName = (name: string) => {
@@ -140,7 +156,6 @@ const GamePage: React.FC = () => {
         }
       });
     }
-
   };
   
   const handleDebug = () => {
@@ -168,14 +183,24 @@ const GamePage: React.FC = () => {
         />
       )}
       {nameEntered && (
-        <GameInfo
-          gameState={gameState}
-          id={id}
-          playerName={playerName}
-          dice={dice}
-          setDice={setDice}
-          onStartGameClick={handleStartGameClick}
-        />
+        <>
+          <GameInfo
+            id={id}
+            playerName={playerName}
+          />
+          <ConnectedPlayers gameState={gameState} />
+          <CurrentPlayerAndBid gameState={gameState} />
+        </>
+      )}
+      {nameEntered && id === 0 && !gameState.started && (
+        <Button
+          variant="success"
+          size="lg"
+          onClick={handleStartGameClick}
+          disabled={gameState.players.length < 2}
+        >
+          Start Game
+        </Button>
       )}
       {gameState.started && nameEntered && (
         <GameControls
@@ -195,6 +220,26 @@ const GamePage: React.FC = () => {
       )}
       {winner && !gameState.started && (
         <p>{winner}</p>
+      )}
+      { nameEntered && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
+          {!gameState.started ? (
+            <img
+              src={dies}
+              alt="Dice Shield"
+              style={{ width: '50px', height: '50px' }}
+            />
+          ) : (
+            dice.map((dieValue, index) => (
+              <img
+                key={index}
+                src={diceImages[dieValue - 1]}
+                alt={`Die ${dieValue}`}
+                style={{ width: '50px', height: '50px' }}
+              />
+            ))
+          )}
+        </div>
       )}
     </Container>
   );

@@ -35,6 +35,9 @@ body {
 }
 
 /* Game Page */
+.game-info-labels {
+    
+}
 
 .submit-name, .submit-name:disabled  {
     background: var(--primary-gradient);
