@@ -34,11 +34,15 @@ const GameInfo: React.FC<GameInfoProps> = ({
   onStartGameClick,
 }) => {
   return (
-    <Container>
-      <h1>Liars Dice</h1>
-      <h3>Your ID: {id}</h3>
-      <p>Your Name: {playerName}</p>
-      <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
+    <Container
+      className='game-info'
+    >
+      <div className='game-info-labels'>
+        <h1>Liars Dice</h1>
+        <h3>Your ID: {id}</h3>
+        <p>Your Name: {playerName}</p>
+        <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
+      </div>
       {id === 0 && !gameState.started && (
         <Button
           variant="success"
