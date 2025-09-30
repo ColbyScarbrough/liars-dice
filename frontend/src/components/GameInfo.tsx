@@ -42,17 +42,18 @@ const GameInfo: React.FC<GameInfoProps> = ({
         <h3>Your ID: {id}</h3>
         <p>Your Name: {playerName}</p>
         <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
-      </div>
-      {id === 0 && !gameState.started && (
-        <Button
-          variant="success"
-          size="lg"
-          onClick={onStartGameClick}
-          disabled={gameState.players.length < 2}
-        >
-          Start Game
-        </Button>
-      )}
+     
+        {id === 0 && !gameState.started && (
+          <Button
+            variant="success"
+            size="lg"
+            onClick={onStartGameClick}
+            disabled={gameState.players.length < 2}
+          >
+            Start Game
+          </Button>
+        )}
+       </div>
       <Row>
         <Col>
           <h3>Connected Players ({gameState.players.length}/6)</h3>
