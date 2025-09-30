@@ -6,6 +6,13 @@
     --primary-gradient: linear-gradient(135deg, #2b3b97, #452263);
 }
 
+html, body {
+  margin: 0; 
+  padding: 0; 
+  height: 100%; 
+  width: 100%; 
+}
+
 body {
     background-color: #000000;
     color: #ffffff;
@@ -35,8 +42,17 @@ body {
 }
 
 /* Game Page */
-.game-info-labels {
-    
+.game-page {
+    display: flex;
+    flex-direction: row;
+}
+
+.game-info {
+    flex: 0 0 25%;
+}
+
+.game {
+    flex: 0 0 75%;
 }
 
 .submit-name, .submit-name:disabled  {

@@ -1,22 +1,50 @@
 import React from 'react';
-import { Container } from 'react-bootstrap';
+import { Container, Button } from 'react-bootstrap';
+
+interface Player {
+  id: number;
+  name: string;
+  diceCount: number;
+  isSelf: boolean;
+  hasLost: boolean;
+  dice?: number[];
+}
+
+interface GameState {
+  players: Player[];
+  currentPlayer: number;
+  currentBid: { count: number; face: number } | null;
+  started: boolean;
+}
 
 interface GameInfoProps {
+  gameState: GameState;
   id: number | null;
   playerName: string;
+  onStartGameClick: () => void;
 }
 
 const GameInfo: React.FC<GameInfoProps> = ({
+  gameState,
   id,
   playerName,
+  onStartGameClick,
 }) => {
   return (
-    <Container className="game-info">
-      <div className="game-info-labels">
-        <h1>Liars Dice</h1>
-        <h3>Your ID: {id}</h3>
-        <p>Your Name: {playerName}</p>
+    <Container>
+      <div>
+        <h3>{playerName}</h3>
       </div>
+      {id === 0 && !gameState.started && (
+        <Button
+          variant="success"
+          size="lg"
+          onClick={onStartGameClick}
+          disabled={gameState.players.length < 2}
+        >
+          Start Game
+        </Button>
+      )}
     </Container>
   );
 };

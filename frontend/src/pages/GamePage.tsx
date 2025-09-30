@@ -172,7 +172,7 @@ const GamePage: React.FC = () => {
   if (!gameState) return <div>Loading players...</div>;
 
   return (
-    <Container>
+    <Container className='game-page'>
       {!nameEntered && (
         <EnterName
           roomId={roomId}
@@ -183,64 +183,59 @@ const GamePage: React.FC = () => {
         />
       )}
       {nameEntered && (
-        <>
+        <div className='game-info'>
           <GameInfo
+            gameState={gameState}
             id={id}
             playerName={playerName}
+            onStartGameClick={handleStartGameClick}
           />
-          <ConnectedPlayers gameState={gameState} />
-          <CurrentPlayerAndBid gameState={gameState} />
-        </>
-      )}
-      {nameEntered && id === 0 && !gameState.started && (
-        <Button
-          variant="success"
-          size="lg"
-          onClick={handleStartGameClick}
-          disabled={gameState.players.length < 2}
-        >
-          Start Game
-        </Button>
-      )}
-      {gameState.started && nameEntered && (
-        <GameControls
-          gameState={gameState}
-          id={id}
-          roomId={roomId}
-          socket={socket}
-          bidCount={bidCount}
-          bidFace={bidFace}
-          setBidCount={setBidCount}
-          setBidFace={setBidFace}
-          bidError={bidError}
-          setBidError={setBidError}
-          callError={callError}
-          setCallError={setCallError}
-        />
-      )}
-      {winner && !gameState.started && (
-        <p>{winner}</p>
-      )}
-      { nameEntered && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
-          {!gameState.started ? (
-            <img
-              src={dies}
-              alt="Dice Shield"
-              style={{ width: '50px', height: '50px' }}
-            />
-          ) : (
-            dice.map((dieValue, index) => (
-              <img
-                key={index}
-                src={diceImages[dieValue - 1]}
-                alt={`Die ${dieValue}`}
-                style={{ width: '50px', height: '50px' }}
-              />
-            ))
-          )}
         </div>
       )}
+      <div className='game'>
+        <ConnectedPlayers gameState={gameState} />
+        <CurrentPlayerAndBid gameState={gameState} />
+
+        {gameState.started && nameEntered && (
+          <GameControls
+            gameState={gameState}
+            id={id}
+            roomId={roomId}
+            socket={socket}
+            bidCount={bidCount}
+            bidFace={bidFace}
+            setBidCount={setBidCount}
+            setBidFace={setBidFace}
+            bidError={bidError}
+            setBidError={setBidError}
+            callError={callError}
+            setCallError={setCallError}
+          />
+        )}
+        {winner && !gameState.started && (
+          <p>{winner}</p>
+        )}
+        { nameEntered && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
+            {!gameState.started ? (
+              <img
+                src={dies}
+                alt="Dice Shield"
+                style={{ width: '50px', height: '50px' }}
+              />
+            ) : (
+              dice.map((dieValue, index) => (
+                <img
+                  key={index}
+                  src={diceImages[dieValue - 1]}
+                  alt={`Die ${dieValue}`}
+                  style={{ width: '50px', height: '50px' }}
+                />
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </Container>
   );
 };
