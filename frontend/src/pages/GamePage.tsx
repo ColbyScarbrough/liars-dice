@@ -158,13 +158,6 @@ const GamePage: React.FC = () => {
 
   return (
     <Container>
-      <Button
-        variant="primary"
-        size="lg"
-        onClick={handleDebug}
-      >
-        Debug
-      </Button>
       {!nameEntered && (
         <EnterName
           roomId={roomId}

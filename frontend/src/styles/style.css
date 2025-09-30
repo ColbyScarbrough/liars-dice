@@ -1,0 +1,45 @@
+/* Style.css */
+:root {
+    --primary-color: #2b3b97;
+    --secondary-color: #452263;
+    --tertiary-color: #83d8ff;
+    --primary-gradient: linear-gradient(135deg, #2b3b97, #452263);
+}
+
+body {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Home Page */
+.game-code {
+    border: var(--primary-gradient);
+}
+
+.join-room, .join-room:disabled  {
+    background: var(--primary-gradient);
+    border-color: black;
+}
+
+.join-room:hover, .join-room:focus{
+    border-color: var(--tertiary-color);
+}
+
+.create-room {
+    background: var(--primary-gradient);
+    border-color: black;
+}
+
+.create-room:hover, .create-room:focus {
+    border-color: var(--tertiary-color);
+}
+
+/* Game Page */
+.submit-name, .submit-name:disabled  {
+    background: var(--primary-gradient);
+    border-color: black;
+}
+
+.submit-name:hover, .submit-name:focus{
+    border-color: var(--tertiary-color);
+}
