@@ -188,7 +188,7 @@ const GamePage: React.FC = () => {
           <GameInfo
             gameState={gameState}
             id={id}
-            uuid={uuid}
+            roomId={roomId}
             playerName={playerName}
             onStartGameClick={handleStartGameClick}
           /> 
