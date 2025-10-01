@@ -66,7 +66,7 @@ const EnterName: React.FC<EnterNameProps> = ({
             size="lg"
             onClick={onSubmit}
             disabled={playerName.trim().length < 1}
-            className='submit-name'
+            className='submit'
           >
             Continue
           </Button>

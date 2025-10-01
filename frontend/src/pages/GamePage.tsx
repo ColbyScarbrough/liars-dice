@@ -219,11 +219,31 @@ const GamePage: React.FC = () => {
                 key={index}
                 src={diceImages[dieValue - 1]}
                 alt={`Die ${dieValue}`}
-                style={{ width: '50px', height: '50px' }}
+                style={{ width: '4rem', height: '4rem' }}
               />
             ))
           )}
         </div>
+      )}
+
+      <br/>
+
+      { nameEntered && (
+        <GameControls
+          gameState={gameState}
+          id={id}
+          roomId={uuid}
+          socket={socket}
+          bidCount={bidCount}
+          bidFace={bidFace}
+          setBidCount={setBidCount}
+          setBidFace={setBidFace}
+          bidError={bidError}
+          setBidError={setBidError}
+          callError={callError}
+          setCallError={setCallError}
+          diceImages={diceImages}
+        />
       )}
     </Container>
   );

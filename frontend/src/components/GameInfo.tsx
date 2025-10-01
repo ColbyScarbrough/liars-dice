@@ -42,7 +42,7 @@ const GameInfo: React.FC<GameInfoProps> = ({
       </div>
       {id === 0 && (
         <Button
-          variant="success"
+          className='submit'
           size="lg"
           onClick={onStartGameClick}
           disabled={gameState.players.length < 2 || gameState.started}

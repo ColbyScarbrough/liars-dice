@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Form, Col, Row } from 'react-bootstrap';
+import { Button, Container, Col, Row } from 'react-bootstrap';
 import { Socket } from 'socket.io-client';
 
 interface Player {
@@ -31,6 +31,7 @@ interface GameControlsProps {
   setBidError: React.Dispatch<React.SetStateAction<string | null>>;
   callError: string | null;
   setCallError: React.Dispatch<React.SetStateAction<string | null>>;
+  diceImages: string[];
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -46,7 +47,11 @@ const GameControls: React.FC<GameControlsProps> = ({
   setBidError,
   callError,
   setCallError,
+  diceImages,
 }) => {
+  let inputCount = 1;
+  let inputFace = 1;
+
   const handleMakeBidClick = () => {
     console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
 
@@ -79,55 +84,46 @@ const GameControls: React.FC<GameControlsProps> = ({
   };
 
   return (
-    <Row>
-      <Col>
-        <h3>Game Actions</h3>
-        <Form.Group className="mb-3">
-          <Form.Label>Bid Count</Form.Label>
-          <Form.Control
-            type="number"
-            min={1}
-            max={6}
-            value={bidCount}
-            onChange={(e) => setBidCount(Number(e.target.value))}
-            disabled={gameState.currentPlayer !== id}
+    <Container>
+      <Row>
+        <Col className='input-column'>
+          <img
+            src={diceImages[bidCount - 1]}
+            style={{ width: '6rem', height: '6rem' }}
           />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Bid Face (1-6)</Form.Label>
-          <Form.Control
-            type="number"
-            min={1}
-            max={6}
-            value={bidFace}
-            onChange={(e) => setBidFace(Number(e.target.value))}
-            disabled={gameState.currentPlayer !== id}
+        </Col>
+        <Col className='input-column'>
+          <img
+            src={diceImages[bidFace - 1]}
+            style={{ width: '6rem', height: '6rem' }}
           />
-        </Form.Group>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
-          <Button
-            variant="primary"
-            onClick={handleMakeBidClick}
-            disabled={gameState.currentPlayer !== id || !roomId || !socket}
-          >
-            Make Bid
+        </Col>
+        <Col className='input-column'>
+          <Button>
+            Test
           </Button>
-          <Button
-            variant="danger"
-            onClick={handleCallLiarClick}
-            disabled={gameState.currentPlayer !== id || !roomId || !socket}
-          >
-            Call Liar
-          </Button>
-        </div>
-        {bidError && (
-          <small className="text-danger" style={{ display: 'block', marginTop: '8px', textAlign: 'center' }}>{bidError}</small>
-        )}
-        {callError && (
-          <small className="text-danger" style={{ display: 'block', marginTop: '8px', textAlign: 'center' }}>{callError}</small>
-        )}
-      </Col>
-    </Row>
+          <img
+            src={diceImages[inputCount - 1]}
+            style={{ width: '6rem', height: '6rem' }}
+          />
+        </Col>
+        <Col className='input-column'>
+          <img
+            src={diceImages[inputFace - 1]}
+            style={{ width: '6rem', height: '6rem' }}
+          />
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+        
+        </Col>
+        <Col>
+        
+        </Col>
+      </Row>
+    </Container>
+
   );
 };
 

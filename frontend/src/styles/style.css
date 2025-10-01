@@ -68,11 +68,16 @@ body {
     height: 4rem;
 }
 
-.submit-name, .submit-name:disabled  {
+.input-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.submit, .submit:disabled  {
     background: var(--primary-gradient);
     border-color: black;
 }
 
-.submit-name:hover, .submit-name:focus{
+.submit:hover, .submit:focus{
     border-color: var(--tertiary-color);
 }
