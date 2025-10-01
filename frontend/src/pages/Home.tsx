@@ -65,7 +65,7 @@ export default function Home() {
             placeholder="Game Code"
             value={roomId}
             onChange={handleCodeChange}
-            className="text-center fs-3 p-3"
+            className="text-center fs-3 p-3 game-code"
             maxLength={6}
           />
         </Col>
@@ -75,10 +75,10 @@ export default function Home() {
       <Row className="justify-content-center mb-4">
         <Col xs="auto">
           <Button
-            variant="primary"
             size="lg"
             disabled={roomId.length !== 6}
             onClick={handleJoin}
+            className="join-room"
           >
             Join Game
           </Button>
@@ -89,16 +89,16 @@ export default function Home() {
       <Row className="justify-content-center">
         <Col xs="auto">
           <Button
-            variant="success"
             size="lg"
             onClick={handleCreate}
+            className="create-room"
           >
             Create Room
           </Button>
           <Button
-            variant="primary"
             size="lg"
             onClick={handleDebug}
+            className="create-room"
           >
             Debug
           </Button>

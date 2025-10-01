@@ -63,10 +63,10 @@ const EnterName: React.FC<EnterNameProps> = ({
       <Row className="justify-content-center">
         <Col xs="auto">
           <Button
-            variant="primary"
             size="lg"
             onClick={onSubmit}
             disabled={playerName.trim().length < 1}
+            className='submit'
           >
             Continue
           </Button>

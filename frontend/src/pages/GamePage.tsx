@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Container } from 'react-bootstrap';
+import { Container, Row, Col  } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
+
+import '../styles/gamepage.css';
 
 import GameControls from '../components/GameControls';
 import GameInfo from '../components/GameInfo';
 import EnterName from '../components/EnterName';
+import ConnectedPlayers from '../components/ConnectedPlayers';
+import CurrentPlayerAndBid from '../components/CurrentPlayerAndBid';
+
+// Import dice images
+import dies from '../assets/dice-shield.png';
+import die1 from '../assets/dice-six-faces-one.png';
+import die2 from '../assets/dice-six-faces-two.png';
+import die3 from '../assets/dice-six-faces-three.png';
+import die4 from '../assets/dice-six-faces-four.png';
+import die5 from '../assets/dice-six-faces-five.png';
+import die6 from '../assets/dice-six-faces-six.png';
 
 
 interface Player {
@@ -39,8 +52,10 @@ const GamePage: React.FC = () => {
   const [callError, setCallError] = useState<string | null>(null);
   const [dice, setDice] = useState<number[]>([]);
 
-  useEffect(() => {
+  // Array of dice images for easy mapping
+  const diceImages = [die1, die2, die3, die4, die5, die6];
 
+  useEffect(() => {
     if (!roomId) {
       setError('Missing roomId');
       return;
@@ -107,6 +122,9 @@ const GamePage: React.FC = () => {
 
     socket.on('newTurn', handleNewTurn);
 
+    return () => {
+      socket.off('newTurn', handleNewTurn);
+    };
   }, [socket, id, roomId]);
 
   const handleSubmitName = (name: string) => {
@@ -140,7 +158,6 @@ const GamePage: React.FC = () => {
         }
       });
     }
-
   };
   
   const handleDebug = () => {
@@ -157,14 +174,7 @@ const GamePage: React.FC = () => {
   if (!gameState) return <div>Loading players...</div>;
 
   return (
-    <Container>
-      <Button
-        variant="primary"
-        size="lg"
-        onClick={handleDebug}
-      >
-        Debug
-      </Button>
+    <Container fluid className='game-page'>
       {!nameEntered && (
         <EnterName
           roomId={roomId}
@@ -175,20 +185,54 @@ const GamePage: React.FC = () => {
         />
       )}
       {nameEntered && (
-        <GameInfo
-          gameState={gameState}
-          id={id}
-          playerName={playerName}
-          dice={dice}
-          setDice={setDice}
-          onStartGameClick={handleStartGameClick}
-        />
+          <GameInfo
+            gameState={gameState}
+            id={id}
+            roomId={roomId}
+            playerName={playerName}
+            onStartGameClick={handleStartGameClick}
+          /> 
       )}
-      {gameState.started && nameEntered && (
+      {nameEntered && (
+          <ConnectedPlayers 
+            gameState={gameState}
+          />
+      )}
+
+      <br/>
+
+      { nameEntered && (
+        <div className='dice'>
+          <h3>Your Dice:</h3>
+          {!gameState.started ? (
+            Array.from({ length: 6 }).map((_, index) => ( // Fallback to 5 if no game-level diceCount
+              <img
+                key={index}
+                src={dies}
+                alt="Dice Shield"
+                className="dice-shield"
+              />
+            ))
+          ) : (
+            dice.map((dieValue, index) => (
+              <img
+                key={index}
+                src={diceImages[dieValue - 1]}
+                alt={`Die ${dieValue}`}
+                style={{ width: '4rem', height: '4rem' }}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      <br/>
+
+      { nameEntered && (
         <GameControls
           gameState={gameState}
           id={id}
-          roomId={roomId}
+          roomId={uuid}
           socket={socket}
           bidCount={bidCount}
           bidFace={bidFace}
@@ -198,10 +242,8 @@ const GamePage: React.FC = () => {
           setBidError={setBidError}
           callError={callError}
           setCallError={setCallError}
+          diceImages={diceImages}
         />
-      )}
-      {winner && !gameState.started && (
-        <p>{winner}</p>
       )}
     </Container>
   );

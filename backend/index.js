@@ -72,7 +72,7 @@ io.on('connection', (socket) => {
 
 
 
-    uuids[roomId][uuid] = socketId;
+    uuids[roomId][uuid] = {socketId};
   })
 
   // ===== Join an Existing Room =====
@@ -127,7 +127,7 @@ io.on('connection', (socket) => {
       hasLost: false
     });
   
-    const socketId = uuids[roomId][uuid]
+    const socketId = uuids[roomId][uuid].socketId;
 
     uuids[roomId][uuid] = {socketId, playerName};
 
@@ -213,18 +213,20 @@ io.on('connection', (socket) => {
 
   // ===== Any Socket Disconnection =====
   socket.on('disconnect', () => {
-    const removablesocketId = socket.id;
-    console.log(`Socket disconnected: ${removablesocketId}`);
+    const removableSocketId = socket.id;
+    console.log(`Socket disconnected: ${removableSocketId}`);
+
     const roomId = Object.keys(uuids).find(roomId =>
-      Object.values(uuids[roomId]).includes(removablesocketId)
+      Object.values(uuids[roomId]).some(entry => entry.socketId === removableSocketId)
     );
 
     if (!roomId) return;
 
-    for (const [uuid, socketId] of Object.entries(uuids[roomId])) {
-      if (socketId === removablesocketId) {
-        //delete the player from the game
-        delete games[roomId].state.players
+    for (const [uuid, entry] of Object.entries(uuids[roomId])) {
+      if (entry.socketId === removableSocketId) {
+        const playerName = entry.playername;
+        console.log(playerName);
+        games[roomId].state.players = games[roomId].state.players.filter(player => player.name !== playerName);
         delete uuids[roomId][uuid];
         break;
       }
@@ -252,4 +254,4 @@ app.get('/', (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
-});
+});;

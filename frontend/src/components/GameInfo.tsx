@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Container, Button } from 'react-bootstrap';
 
 interface Player {
   id: number;
@@ -20,61 +20,37 @@ interface GameState {
 interface GameInfoProps {
   gameState: GameState;
   id: number | null;
+  roomId: string | undefined;
   playerName: string;
-  dice: number[];
-  setDice: React.Dispatch<React.SetStateAction<number[]>>;
   onStartGameClick: () => void;
 }
 
 const GameInfo: React.FC<GameInfoProps> = ({
   gameState,
   id,
+  roomId,
   playerName,
-  dice,
   onStartGameClick,
 }) => {
   return (
-    <Container>
-      <h1>Liars Dice</h1>
-      <h3>Your ID: {id}</h3>
-      <p>Your Name: {playerName}</p>
-      <p>Your Dice: {dice.length ? dice.join(', ') : 'Loading...'}</p>
-      {id === 0 && !gameState.started && (
+    <div className='game-info'>
+      <div>
+        <h3>{playerName}</h3>
+        <br/>
+        <h3>Room Code: {roomId}</h3>
+        <br/>
+      </div>
+      {id === 0 && (
         <Button
-          variant="success"
+          className='submit'
           size="lg"
           onClick={onStartGameClick}
-          disabled={gameState.players.length < 2}
+          disabled={gameState.players.length < 2 || gameState.started}
         >
           Start Game
         </Button>
       )}
-      <Row>
-        <Col>
-          <h3>Connected Players ({gameState.players.length}/6)</h3>
-          {gameState.players.map(player => (
-            <p key={player.id}>Name: {player.name}, ID: {player.id}, Dice: {player.diceCount}</p>
-          ))}
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <p>Current Player: {gameState.players.find(p => p.id === gameState.currentPlayer)?.name || 'Unknown'}</p>
-        </Col>
-        <Col>
-          <p>
-            Current Bid: {gameState.currentBid 
-              ? `${gameState.currentBid.count} x ${gameState.currentBid.face}` 
-              : 'None'}
-          </p>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <p>Game Status: {gameState.started ? 'Started' : 'Waiting to start'}</p>
-        </Col>
-      </Row>
-    </Container>
+    </div>
   );
 };
 
