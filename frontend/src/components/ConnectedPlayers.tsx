@@ -1,5 +1,7 @@
 import React from 'react';
 import { Row, Col, Container } from 'react-bootstrap';
+import dies from '../assets/dice-shield.png';
+
 
 interface Player {
   id: number;
@@ -23,10 +25,17 @@ interface ConnectedPlayersProps {
 
 const ConnectedPlayers: React.FC<ConnectedPlayersProps> = ({ gameState }) => {
   return (
-    <Container>
-        <h3>Connected Players ({gameState.players.length}/6)</h3>
+    <Container className='player-info'>
+        <h1>Connected Players ({gameState.players.length}/6)</h1>
         {gameState.players.map(player => (
-          <p key={player.id}>Name: {player.name}, ID: {player.id}, Dice: {player.diceCount}</p>
+          <h3 key={player.id}>{player.name}: {Array.from({ length: player.diceCount }).map((_, index) => (
+          <img
+            key={index}
+            src={dies}
+            alt="Dice Shield"
+            className='dice-shield'
+          />
+        ))}</h3>
         ))}
     </Container>
   );

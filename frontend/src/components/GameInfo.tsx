@@ -20,6 +20,7 @@ interface GameState {
 interface GameInfoProps {
   gameState: GameState;
   id: number | null;
+  uuid: number;
   playerName: string;
   onStartGameClick: () => void;
 }
@@ -27,25 +28,29 @@ interface GameInfoProps {
 const GameInfo: React.FC<GameInfoProps> = ({
   gameState,
   id,
+  uuid,
   playerName,
   onStartGameClick,
 }) => {
   return (
-    <Container>
+    <div className='game-info'>
       <div>
         <h3>{playerName}</h3>
+        <br/>
+        <h3>Room Code: {uuid}</h3>
+        <br/>
       </div>
-      {id === 0 && !gameState.started && (
+      {id === 0 && (
         <Button
           variant="success"
           size="lg"
           onClick={onStartGameClick}
-          disabled={gameState.players.length < 2}
+          disabled={gameState.players.length < 2 || gameState.started}
         >
           Start Game
         </Button>
       )}
-    </Container>
+    </div>
   );
 };
 

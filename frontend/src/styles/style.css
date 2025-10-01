@@ -6,16 +6,14 @@
     --primary-gradient: linear-gradient(135deg, #2b3b97, #452263);
 }
 
-html, body {
-  margin: 0; 
-  padding: 0; 
-  height: 100%; 
-  width: 100%; 
+html {
+    height: 100%;
 }
 
 body {
     background-color: #000000;
     color: #ffffff;
+    height: 100%;
 }
 
 /* Home Page */
@@ -43,16 +41,31 @@ body {
 
 /* Game Page */
 .game-page {
-    display: flex;
-    flex-direction: row;
+    height: 100%;
+    position: relative;
 }
 
 .game-info {
-    flex: 0 0 25%;
+    position: absolute;
+    margin: 0;
+    padding: 0;
+}
+
+.player-info {
+    height: 20rem;
 }
 
 .game {
-    flex: 0 0 75%;
+}
+
+.dice {
+    width: 100%;
+    justify-content: center;
+}
+
+.dice-shield {
+    width: 4rem;
+    height: 4rem;
 }
 
 .submit-name, .submit-name:disabled  {

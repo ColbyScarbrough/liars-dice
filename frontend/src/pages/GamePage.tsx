@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Button } from 'react-bootstrap';
+import { Container, Row, Col  } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import io from 'socket.io-client';
+
+import '../styles/gamepage.css';
 
 import GameControls from '../components/GameControls';
 import GameInfo from '../components/GameInfo';
@@ -172,7 +174,7 @@ const GamePage: React.FC = () => {
   if (!gameState) return <div>Loading players...</div>;
 
   return (
-    <Container className='game-page'>
+    <Container fluid className='game-page'>
       {!nameEntered && (
         <EnterName
           roomId={roomId}
@@ -183,59 +185,46 @@ const GamePage: React.FC = () => {
         />
       )}
       {nameEntered && (
-        <div className='game-info'>
           <GameInfo
             gameState={gameState}
             id={id}
+            uuid={uuid}
             playerName={playerName}
             onStartGameClick={handleStartGameClick}
-          />
-        </div>
+          /> 
       )}
-      <div className='game'>
-        <ConnectedPlayers gameState={gameState} />
-        <CurrentPlayerAndBid gameState={gameState} />
-
-        {gameState.started && nameEntered && (
-          <GameControls
+      {nameEntered && (
+          <ConnectedPlayers 
             gameState={gameState}
-            id={id}
-            roomId={roomId}
-            socket={socket}
-            bidCount={bidCount}
-            bidFace={bidFace}
-            setBidCount={setBidCount}
-            setBidFace={setBidFace}
-            bidError={bidError}
-            setBidError={setBidError}
-            callError={callError}
-            setCallError={setCallError}
           />
-        )}
-        {winner && !gameState.started && (
-          <p>{winner}</p>
-        )}
-        { nameEntered && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }}>
-            {!gameState.started ? (
+      )}
+
+      <br/>
+
+      { nameEntered && (
+        <div className='dice'>
+          <h3>Your Dice:</h3>
+          {!gameState.started ? (
+            Array.from({ length: 6 }).map((_, index) => ( // Fallback to 5 if no game-level diceCount
               <img
+                key={index}
                 src={dies}
                 alt="Dice Shield"
+                className="dice-shield"
+              />
+            ))
+          ) : (
+            dice.map((dieValue, index) => (
+              <img
+                key={index}
+                src={diceImages[dieValue - 1]}
+                alt={`Die ${dieValue}`}
                 style={{ width: '50px', height: '50px' }}
               />
-            ) : (
-              dice.map((dieValue, index) => (
-                <img
-                  key={index}
-                  src={diceImages[dieValue - 1]}
-                  alt={`Die ${dieValue}`}
-                  style={{ width: '50px', height: '50px' }}
-                />
-              ))
-            )}
-          </div>
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </Container>
   );
 };
