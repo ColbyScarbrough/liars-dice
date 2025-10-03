@@ -4,7 +4,6 @@
     --secondary-color: #452263;
     --tertiary-color: #83d8ff;
     --primary-gradient: linear-gradient(135deg, #2b3b97, #452263);
-    --secondary-gradient: linear-gradient(135deg, #452263, #83d8ff);
 }
 
 html {
@@ -61,6 +60,7 @@ body {
 
 .dice {
     width: 100%;
+    justify-content: center;
 }
 
 .dice-shield {
@@ -68,39 +68,9 @@ body {
     height: 4rem;
 }
 
-.input-dice {
-    width: 70%;
-}
-
 .input-column {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.input-button {
-    width: 2.5rem;
-    background: var(--primary-gradient);
-    border-color: var(--tertiary-color);
-}
-
-.input-button:disabled {
-    border-color: #000000;
-}
-
-.input-button:hover {
-    border-color: #ffffff;
-}
-
-.turn-button {
-    width: 8rem;
-    background: var(--secondary-gradient);
-    border: #000000;
-}
-
-.turn-button:hover, .input-button:focus {
-    border: #ffffff;
 }
 
 .submit, .submit:disabled  {
@@ -108,6 +78,6 @@ body {
     border-color: black;
 }
 
-.submit:hover {
+.submit:hover, .submit:focus{
     border-color: var(--tertiary-color);
 }

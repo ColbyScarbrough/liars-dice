@@ -20,7 +20,7 @@ interface GameState {
 interface GameInfoProps {
   gameState: GameState;
   id: number | null;
-  roomId: string | undefined;
+  uuid: number;
   playerName: string;
   onStartGameClick: () => void;
 }
@@ -28,7 +28,7 @@ interface GameInfoProps {
 const GameInfo: React.FC<GameInfoProps> = ({
   gameState,
   id,
-  roomId,
+  uuid,
   playerName,
   onStartGameClick,
 }) => {
@@ -37,7 +37,7 @@ const GameInfo: React.FC<GameInfoProps> = ({
       <div>
         <h3>{playerName}</h3>
         <br/>
-        <h3>Room Code: {roomId}</h3>
+        <h3>Room Code: {uuid}</h3>
         <br/>
       </div>
       {id === 0 && (
