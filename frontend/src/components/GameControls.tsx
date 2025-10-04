@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button, Container, Col, Row } from 'react-bootstrap';
 import { Socket } from 'socket.io-client';
 
@@ -49,18 +49,21 @@ const GameControls: React.FC<GameControlsProps> = ({
   setCallError,
   diceImages,
 }) => {
-  let inputCount = 1;
-  let inputFace = 1;
+  const [inputCount, setInputCount] = useState(1); // State for inputCount
+  const [inputFace, setInputFace] = useState(1); // State for inputFace
 
   const handleMakeBidClick = () => {
-    console.log('Make Bid clicked:', { count: bidCount, face: bidFace });
+    console.log('Make Bid clicked:', { count: inputCount, face: inputFace });
 
     if (roomId && id !== null && socket) {
-      socket.emit('makeBid', { roomId, playerId: id, count: bidCount, face: bidFace }, (response: { state?: GameState; error?: string }) => {
+      socket.emit('makeBid', { roomId, playerId: id, count: inputCount, face: inputFace }, (response: { state?: GameState; error?: string }) => {
         if (response.error) {
           setBidError(response.error);
         } else {
           setBidError(null);
+          // Optionally update bidCount and bidFace in parent state
+          setBidCount(inputCount);
+          setBidFace(inputFace);
         }
       });
     } else {
@@ -83,8 +86,33 @@ const GameControls: React.FC<GameControlsProps> = ({
     }
   };
 
+  // Handlers for incrementing and decrementing inputCount and inputFace
+  const handleIncrementCount = () => {
+    setInputCount(prev => Math.min(prev + 1, diceImages.length)); // Cap at max diceImages length
+  };
+
+  const handleDecrementCount = () => {
+    setInputCount(prev => Math.max(prev - 1, 1)); // Prevent going below 1
+  };
+
+  const handleIncrementFace = () => {
+    setInputFace(prev => Math.min(prev + 1, diceImages.length)); // Cap at max diceImages length
+  };
+
+  const handleDecrementFace = () => {
+    setInputFace(prev => Math.max(prev - 1, 1)); // Prevent going below 1
+  };
+
   return (
-    <Container>
+    <Container className='input-dice'>
+      <Row>
+        <Col>
+          <h3>Current Bid</h3>
+        </Col>
+        <Col>
+          <h3>Your Bid</h3>
+        </Col>
+      </Row>
       <Row>
         <Col className='input-column'>
           <img
@@ -99,31 +127,31 @@ const GameControls: React.FC<GameControlsProps> = ({
           />
         </Col>
         <Col className='input-column'>
-          <Button>
-            Test
-          </Button>
+          <Button onClick={handleIncrementCount} className='input-button' disabled={!gameState.started}>+</Button>
           <img
             src={diceImages[inputCount - 1]}
             style={{ width: '6rem', height: '6rem' }}
           />
+          <Button onClick={handleDecrementCount} className='input-button' disabled={!gameState.started}>-</Button>
         </Col>
         <Col className='input-column'>
+          <Button onClick={handleIncrementFace} className='input-button' disabled={!gameState.started}>+</Button>
           <img
             src={diceImages[inputFace - 1]}
             style={{ width: '6rem', height: '6rem' }}
           />
+          <Button onClick={handleDecrementFace} className='input-button' disabled={!gameState.started}>-</Button>
         </Col>
       </Row>
       <Row>
         <Col>
-        
+          <Button onClick={handleMakeBidClick} className='turn-button' disabled={!gameState.started || gameState.currentPlayer != id}>Make Bid</Button>
         </Col>
         <Col>
-        
+          <Button onClick={handleCallLiarClick} className='turn-button' disabled={!gameState.started || gameState.currentPlayer != id}>Call Liar</Button>
         </Col>
       </Row>
     </Container>
-
   );
 };
 

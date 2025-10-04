@@ -4,6 +4,7 @@
     --secondary-color: #452263;
     --tertiary-color: #83d8ff;
     --primary-gradient: linear-gradient(135deg, #2b3b97, #452263);
+    --secondary-gradient: linear-gradient(135deg, #83d8ff, #452263);
 }
 
 html {
@@ -71,6 +72,20 @@ body {
 .input-column {
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.input-button {
+    width: 2.5rem;
+    background: var(--primary-gradient);
+    border: #000000;
+}
+
+.turn-button {
+    background: var(--secondary-gradient);
+    width: 8rem;
+    border: #000000;
 }
 
 .submit, .submit:disabled  {
